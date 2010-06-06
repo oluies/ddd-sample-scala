@@ -2,8 +2,10 @@ package se.citerus.dddsample.domain.model.cargo;
 
 import org.apache.commons.lang.Validate;
 import se.citerus.dddsample.domain.model.handling.HandlingEvent;
-//import se.citerus.dddsample.domain.model.handling.HandlingHistory;
+import se.citerus.dddsample.domain.model.handling.HandlingHistory;
 import se.citerus.dddsample.domain.model.location.Location;
+import se.citerus.dddsample.domain.model.location.Location;
+
 //import se.citerus.dddsample.domain.shared.DomainObjectUtils;
 import se.citerus.dddsample.domain.shared.Entity;
 
@@ -43,6 +45,48 @@ import se.citerus.dddsample.domain.shared.Entity;
  * in port etc), are captured in this aggregate.
  *
  */
-class Cargo extends Entity[Cargo] {
+class Cargo(trackingId:TrackingId, routeSpecification:RouteSpecification) extends Entity[Cargo] {
+    Validate.notNull(trackingId, "Tracking ID is required");
+    Validate.notNull(routeSpecification, "Route specification is required");
+
+    // Cargo origin never changes, even if the route specification changes.
+    // However, at creation, cargo orgin can be derived from the initial route specification.
+    private val origin = routeSpecification.origin
+    
+    private var itinerary:Itinerary = Itinerary.EMPTY_ITINERARY
+    
+    private var delivery:Delivery = Delivery.derivedFrom(routeSpecification, itinerary, HandlingHistory.EMPTY);
+    
+    /**
+     * Attach a new itinerary to this cargo.
+     *
+     * @param itinerary an itinerary. May not be null.
+     */
+    def assignToRoute(newItinerary:Itinerary) {
+      Validate.notNull(newItinerary, "Itinerary is required for assignment");
+  
+      itinerary = newItinerary;
+      // Handling consistency within the Cargo aggregate synchronously
+      delivery = delivery.updateOnRouting(this.routeSpecification, this.itinerary);
+    }
+    
+    //  private TrackingId trackingId;
+//  private Location origin;
+//  private RouteSpecification routeSpecification;
+//  private Itinerary itinerary;
+//  private Delivery delivery;
+//
+//  public Cargo(final TrackingId trackingId, final RouteSpecification routeSpecification) {
+//
+//    this.trackingId = trackingId;
+//    this.origin = routeSpecification.origin();
+//    this.routeSpecification = routeSpecification;
+//
+//    this.delivery = Delivery.derivedFrom(
+//      this.routeSpecification, this.itinerary, HandlingHistory.EMPTY
+//    );
+//  }
+
+  
   override def sameIdentityAs(other:Cargo) : Boolean = { false }  
 }
