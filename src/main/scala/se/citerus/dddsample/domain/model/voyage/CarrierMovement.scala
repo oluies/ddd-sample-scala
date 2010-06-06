@@ -15,49 +15,38 @@ import java.util.Date;
  * @param departureTime time of departure
  * @param arrivalTime time of arrival
  */
-class CarrierMovement(val departureLocation:Location, val arrivalLocation:Location, departureTime:Date, arrivalTime:Date) {
+class CarrierMovement(val departureLocation:Location, 
+                      val arrivalLocation:Location, 
+                      departureTime:Date,
+                      arrivalTime:Date) extends ValueObject[CarrierMovement] {
 
   Validate.noNullElements(Array(departureLocation, arrivalLocation, departureTime, arrivalTime))
   
   def departureTime() : Date = new Date(departureTime.getTime())
   def arrivalTime() : Date = new Date(arrivalTime.getTime())
   
-//  @Override
-//  public boolean equals(final Object o) {
-//    if (this == o) return true;
-//    if (o == null || getClass() != o.getClass()) return false;
-//
-//    final CarrierMovement that = (CarrierMovement) o;
-//
-//    return sameValueAs(that);
-//  }
-//
-//  @Override
-//  public int hashCode() {
-//    return new HashCodeBuilder().
-//      append(this.departureLocation).
-//      append(this.departureTime).
-//      append(this.arrivalLocation).
-//      append(this.arrivalTime).
-//      toHashCode();
-//  }
-//
-//  @Override
-//  public boolean sameValueAs(CarrierMovement other) {
-//    return other != null && new EqualsBuilder().
-//      append(this.departureLocation, other.departureLocation).
-//      append(this.departureTime, other.departureTime).
-//      append(this.arrivalLocation, other.arrivalLocation).
-//      append(this.arrivalTime, other.arrivalTime).
-//      isEquals();
-//  }
-//
-//  CarrierMovement() {
-//    // Needed by Hibernate
-//  }
-//
-//  // Auto-generated surrogate key
-//  private Long id;
+  override def equals(other:Any) : Boolean = other match {
+    case other: CarrierMovement => other.getClass == getClass && sameValueAs(other)
+    case _ => false 
+  }
+
+  override def hashCode() : Int = {
+    new HashCodeBuilder().
+      append(this.departureLocation).
+      append(this.departureTime).
+      append(this.arrivalLocation).
+      append(this.arrivalTime).
+      toHashCode();
+  }
+
+  override def sameValueAs(other:CarrierMovement) : Boolean = {
+    other != null && new EqualsBuilder().
+      append(this.departureLocation, other.departureLocation).
+      append(this.departureTime, other.departureTime).
+      append(this.arrivalLocation, other.arrivalLocation).
+      append(this.arrivalTime, other.arrivalTime).
+      isEquals();
+  }
 }
 
 object CarrierMovement {

@@ -11,13 +11,12 @@ import java.util.regex.Pattern
  */
 class UnLocode(val countryAndLocation:String) extends ValueObject[UnLocode] {
    // Location code is usually three letters, but may contain the numbers 2-9 as well
-  private val VALID_PATTERN = Pattern.compile("[a-zA-Z]{2}[a-zA-Z2-9]{3}");
-    require(countryAndLocation != null, "Country and location may not be null")
-    require(VALID_PATTERN.matcher(countryAndLocation).matches(),
-        countryAndLocation + " is not a valid UN/LOCODE (does not match pattern)");
+  private val VALID_PATTERN = Pattern.compile("[a-zA-Z]{2}[a-zA-Z2-9]{3}")
   
-  def this() = this("")
-    
+  require(countryAndLocation != null, "Country and location may not be null")
+  require(VALID_PATTERN.matcher(countryAndLocation).matches(),
+      countryAndLocation + " is not a valid UN/LOCODE (does not match pattern)");
+      
   val idString = countryAndLocation.toUpperCase()
   
   override def equals(other:Any) : Boolean = other match {
