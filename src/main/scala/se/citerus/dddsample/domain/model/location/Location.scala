@@ -6,7 +6,9 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import se.citerus.dddsample.domain.shared.Entity;
 
 class Location(val unlocode:UnLocode, val name:String) extends Entity[Location] {
-
+  Validate.notNull(unlocode);
+  Validate.notNull(name);
+  
   override def sameIdentityAs(other:Location) : Boolean = {
     unlocode.sameValueAs(other.unlocode);
   }

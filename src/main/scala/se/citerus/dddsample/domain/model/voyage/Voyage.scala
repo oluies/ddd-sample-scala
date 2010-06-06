@@ -40,8 +40,8 @@ class Builder(val voyageNumber:VoyageNumber, var departureLocation:Location, val
   Validate.notNull(departureLocation, "Departure location is required");
 
   def addMovement(arrivalLocation:Location, departureTime:Date, arrivalTime:Date) : Builder = {
-    val newMovements = new CarrierMovement(departureLocation, arrivalLocation, 
-    		 								departureTime, arrivalTime) :: carrierMovements 
+    val newMovements = carrierMovements ::: List(new CarrierMovement(departureLocation, arrivalLocation, 
+                        departureTime, arrivalTime)) 
     // Next departure location is the same as this arrival location
     val builder = new Builder(voyageNumber, arrivalLocation, newMovements)    
     builder

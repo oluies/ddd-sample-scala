@@ -1,4 +1,4 @@
-package se.citerus.dddsample.application.domain.model.cargo
+package se.citerus.dddsample.domain.model.cargo
 
 import se.citerus.dddsample.domain.shared.ValueObject
 

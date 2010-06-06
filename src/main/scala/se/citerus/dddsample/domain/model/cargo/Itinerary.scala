@@ -1,4 +1,4 @@
-package se.citerus.dddsample.application.domain.model.cargo
+package se.citerus.dddsample.domain.model.cargo
 
 import se.citerus.dddsample.domain.shared.ValueObject
 import se.citerus.dddsample.domain.model.handling.HandlingEvent;
@@ -22,7 +22,9 @@ object Itinerary {
  *
  */
 class Itinerary(val legs:List[Leg] = List()) extends ValueObject[Itinerary] {
-    //Validate.notEmpty(legs);
+    
+  require(! legs.isEmpty, "legs cannot be empty")
+  
     //Validate.noNullElements(legs);
 
   /**
@@ -74,7 +76,6 @@ class Itinerary(val legs:List[Leg] = List()) extends ValueObject[Itinerary] {
     }
   }
   
-
   /**
    * @return The initial departure location.
    */
