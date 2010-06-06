@@ -36,10 +36,9 @@ class Itinerary(val legs:List[Leg] = List()) extends ValueObject[Itinerary] {
     if (legs.isEmpty) {
       return true;
     }
-    
-    
+        
     event.eventType match {
-      case myObject => {
+      case RECEIVE => {
         //Check that the first leg's origin is the event's location
         val leg:Leg = legs(0);
         return (leg.loadLocation.equals(event.location));
@@ -69,7 +68,7 @@ class Itinerary(val legs:List[Leg] = List()) extends ValueObject[Itinerary] {
         val leg:Leg = lastLeg;
         return (leg.unloadLocation.equals(event.location));
       }
-      case _:HandlingEventType#CUSTOMS => {
+      case CUSTOMS => {
        return true
       }
     }

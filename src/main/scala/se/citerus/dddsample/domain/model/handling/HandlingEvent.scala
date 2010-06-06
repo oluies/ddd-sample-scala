@@ -65,7 +65,6 @@ class HandlingEvent(val cargo:Cargo,
  * association, it's never optional.
  */
 sealed abstract class HandlingEventType(voyageRequired:Boolean) extends ValueObject[HandlingEventType] {
-
   /**
    * @return True if a voyage association is required for this event type.
    */
