@@ -1,6 +1,20 @@
 package se.citerus.dddsample.domain.model.handling
 
+import se.citerus.dddsample.domain.model.location.UnLocode
+import se.citerus.dddsample.domain.model.voyage.VoyageNumber
 import se.citerus.dddsample.domain.shared.DomainEvent
+
+import se.citerus.dddsample.domain.model.cargo.Cargo;
+import se.citerus.dddsample.domain.model.cargo.CargoRepository;
+import se.citerus.dddsample.domain.model.cargo.TrackingId;
+import se.citerus.dddsample.domain.model.location.Location;
+import se.citerus.dddsample.domain.model.location.LocationRepository;
+import se.citerus.dddsample.domain.model.location.UnLocode;
+import se.citerus.dddsample.domain.model.voyage.Voyage;
+import se.citerus.dddsample.domain.model.voyage.VoyageNumber;
+import se.citerus.dddsample.domain.model.voyage.VoyageRepository;
+
+import java.util.Date;
 
 import org.apache.commons.lang.Validate;
 import org.apache.commons.lang.builder.EqualsBuilder;
@@ -20,15 +34,15 @@ import java.util.Date;
  * <p/>
  * The HandlingEvent's are sent from different Incident Logging Applications
  * some time after the event occured and contain information about the
- * { @link se.citerus.dddsample.domain.model.cargo.TrackingId },   { @link se.citerus.dddsample.domain.model.location.Location }, timestamp of the completion of the event,
- * and possibly, if applicable a   { @link se.citerus.dddsample.domain.model.voyage.Voyage }.
+ * { @link se.citerus.dddsample.domain.model.cargo.TrackingId },           { @link se.citerus.dddsample.domain.model.location.Location }, timestamp of the completion of the event,
+ * and possibly, if applicable a           { @link se.citerus.dddsample.domain.model.voyage.Voyage }.
  * <p/>
  * This class is the only member, and consequently the root, of the HandlingEvent aggregate. 
  * <p/>
- * HandlingEvent's could contain information about a   { @link Voyage } and if so,
- * the event type must be either   { @link Type # LOAD } or   { @link Type # UNLOAD }.
+ * HandlingEvent's could contain information about a           { @link Voyage } and if so,
+ * the event type must be either           { @link Type # LOAD } or           { @link Type # UNLOAD }.
  * <p/>
- * All other events must be of   { @link Type # RECEIVE },   { @link Type # CLAIM } or   { @link Type # CUSTOMS }.
+ * All other events must be of           { @link Type # RECEIVE },           { @link Type # CLAIM } or           { @link Type # CUSTOMS }.
  */
 class HandlingEvent(val cargo: Cargo,
                     val completionTime: Date,
@@ -55,6 +69,73 @@ class HandlingEvent(val cargo: Cargo,
             append(this.eventType, other.eventType).
             isEquals();
     false
+  }
+
+}
+
+/**
+ * Creates handling events.
+ */
+object HandlingEvent {
+  var CargoRepository cargoRepository;
+  var VoyageRepository voyageRepository;
+  var LocationRepository locationRepository;
+
+  /**
+   * @param registrationTime time when this event was received by the system
+   * @param completionTime when the event was completed, for example finished loading
+   * @param trackingId cargo tracking id
+   * @param voyageNumber voyage number
+   * @param unlocode United Nations Location Code for the location of the event
+   * @param type type of event
+   * @throws UnknownVoyageException if there's no voyage with this number
+   * @throws UnknownCargoException if there's no cargo with this tracking id
+   * @throws UnknownLocationException if there's no location with this UN Locode
+   * @return A handling event.
+   */
+  def apply(registrationTime: Date, completionTime: Date, trackingId: TrackingId,
+            voyageNumber: VoyageNumber, unlocode: UnLocode, eventType: HandlingEventType): HandlingEvent = {
+    val cargo = findCargo(trackingId);
+    val voyage = findVoyage(voyageNumber);
+    val location = findLocation(unlocode);
+
+    try {
+      if (voyage == null) {
+        return new HandlingEvent(cargo, completionTime, registrationTime, eventType, location);
+      } else {
+        return new HandlingEvent(cargo, completionTime, registrationTime, eventType, location, voyage);
+      }
+    } catch {
+      case e => throw new CannotCreateHandlingEventException(e);
+    }
+  }
+
+  def findCargo(trackingId:TrackingId): Cargo = {
+    val cargo = cargoRepository.find(trackingId);
+    if (cargo == null) throw new UnknownCargoException(trackingId);
+    return cargo;
+  }
+
+  def findVoyage(VoyageNumber voyageNumber): Voyage = {
+    if (voyageNumber == null) {
+      return null;
+    }
+
+    val voyage = voyageRepository.find(voyageNumber);
+    if (voyage == null) {
+      throw new UnknownVoyageException(voyageNumber);
+    }
+
+    return voyage;
+  }
+
+  def findLocation(unlocode: Unlocode): Location = {
+    val location = locationRepository.find(unlocode);
+    if (location == null) {
+      throw new UnknownLocationException(unlocode);
+    }
+
+    return location;
   }
 
 }
