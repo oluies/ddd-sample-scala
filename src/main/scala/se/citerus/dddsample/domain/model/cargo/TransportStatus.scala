@@ -1,12 +1,14 @@
-package se.citerus.dddsample.domain.model.cargo;
+package se.citerus.dddsample.domain.model.cargo
+
+;
 
 import se.citerus.dddsample.domain.shared.ValueObject;
 
 /**
  * Represents the different transport statuses for a cargo.
  */
-sealed abstract class TransportStatus extends ValueObject[TransportStatus] {  
-  def sameValueAs(other:TransportStatus) : Boolean = {
+sealed abstract class TransportStatus extends ValueObject[TransportStatus] {
+  def sameValueAs(other: TransportStatus): Boolean = {
     other != null && this.equals(other)
   }
 }

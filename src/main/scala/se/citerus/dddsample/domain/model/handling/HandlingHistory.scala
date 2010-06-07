@@ -6,17 +6,16 @@ import se.citerus.dddsample.domain.shared.ValueObject;
  * The handling history of a cargo.
  *
  */
-class HandlingHistory(val handlingEvents:List[HandlingEvent]) extends ValueObject[HandlingHistory] {
-
-  def sameValueAs(other:HandlingHistory) : Boolean = {
+class HandlingHistory(val handlingEvents: List[HandlingEvent]) extends ValueObject[HandlingHistory] {
+  def sameValueAs(other: HandlingHistory): Boolean = {
     other != null && handlingEvents.equals(other.handlingEvents);
   }
-  
+
   def distinctEventsByCompletionTime: List[HandlingEvent] = {
-    handlingEvents.sort((s, t) => s.completionTime.compareTo(s.completionTime) < 0 )
+    handlingEvents.sort((s, t) => s.completionTime.compareTo(s.completionTime) < 0)
   }
-  
-  def mostRecentlyCompletedEvent : Option[HandlingEvent] = {
+
+  def mostRecentlyCompletedEvent: Option[HandlingEvent] = {
     var distinctEvents = distinctEventsByCompletionTime;
     if (distinctEvents.isEmpty) {
       return None;

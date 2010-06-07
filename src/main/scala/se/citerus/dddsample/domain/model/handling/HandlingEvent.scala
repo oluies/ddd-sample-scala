@@ -20,23 +20,22 @@ import java.util.Date;
  * <p/>
  * The HandlingEvent's are sent from different Incident Logging Applications
  * some time after the event occured and contain information about the
- * {@link se.citerus.dddsample.domain.model.cargo.TrackingId}, {@link se.citerus.dddsample.domain.model.location.Location}, timestamp of the completion of the event,
- * and possibly, if applicable a {@link se.citerus.dddsample.domain.model.voyage.Voyage}.
+ * { @link se.citerus.dddsample.domain.model.cargo.TrackingId },   { @link se.citerus.dddsample.domain.model.location.Location }, timestamp of the completion of the event,
+ * and possibly, if applicable a   { @link se.citerus.dddsample.domain.model.voyage.Voyage }.
  * <p/>
  * This class is the only member, and consequently the root, of the HandlingEvent aggregate. 
  * <p/>
- * HandlingEvent's could contain information about a {@link Voyage} and if so,
- * the event type must be either {@link Type#LOAD} or {@link Type#UNLOAD}.
+ * HandlingEvent's could contain information about a   { @link Voyage } and if so,
+ * the event type must be either   { @link Type # LOAD } or   { @link Type # UNLOAD }.
  * <p/>
- * All other events must be of {@link Type#RECEIVE}, {@link Type#CLAIM} or {@link Type#CUSTOMS}.
+ * All other events must be of   { @link Type # RECEIVE },   { @link Type # CLAIM } or   { @link Type # CUSTOMS }.
  */
-class HandlingEvent(val cargo:Cargo,
-                    val completionTime:Date, 
-                    val registrationTime:Date, 
-                    val eventType:HandlingEventType, 
-                    val location:Location,
-                    val voyage:Voyage) extends DomainEvent[HandlingEvent] {
-  
+class HandlingEvent(val cargo: Cargo,
+                    val completionTime: Date,
+                    val registrationTime: Date,
+                    val eventType: HandlingEventType,
+                    val location: Location,
+                    val voyage: Voyage) extends DomainEvent[HandlingEvent] {
   Validate.notNull(cargo, "Cargo is required");
   Validate.notNull(completionTime, "Completion time is required");
   Validate.notNull(registrationTime, "Registration time is required");
@@ -44,20 +43,20 @@ class HandlingEvent(val cargo:Cargo,
   Validate.notNull(location, "Location is required");
   Validate.notNull(voyage, "Voyage is required");
 
-  require(! eventType.prohibitsVoyage(), "Voyage is not allowed with event type " + eventType)
-    
-  
-   def sameEventAs(other:HandlingEvent) : Boolean = {
-         return other != null && new EqualsBuilder().
-          append(this.cargo, other.cargo).
-          append(this.voyage, other.voyage).
-          append(this.completionTime, other.completionTime).
-          append(this.location, other.location).
-          append(this.eventType, other.eventType).
-          isEquals();
-     false
-   }
-    
+  require(!eventType.prohibitsVoyage(), "Voyage is not allowed with event type " + eventType)
+
+
+  def sameEventAs(other: HandlingEvent): Boolean = {
+    return other != null && new EqualsBuilder().
+            append(this.cargo, other.cargo).
+            append(this.voyage, other.voyage).
+            append(this.completionTime, other.completionTime).
+            append(this.location, other.location).
+            append(this.eventType, other.eventType).
+            isEquals();
+    false
+  }
+
 }
 
 

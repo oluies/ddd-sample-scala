@@ -13,15 +13,15 @@ import se.citerus.dddsample.domain.shared.ValueObject;
  * happen to a cargo in the future.
  *
  */
-case class HandlingActivity(eventType:HandlingEventType, location:Location, voyage:Option[Voyage] = None)
-  extends ValueObject[HandlingActivity] 
+case class HandlingActivity(eventType: HandlingEventType, location: Location, voyage: Option[Voyage] = None)
+        extends ValueObject[HandlingActivity]
 {
   Validate.notNull(eventType, "Handling event type is required");
   Validate.notNull(location, "Location is required");
-  
-  def this(eventType:HandlingEventType, location:Location) = { this(eventType, location, None) }
-  
-  def sameValueAs(other:HandlingActivity) : Boolean = {
+
+  def this(eventType: HandlingEventType, location: Location) = {this (eventType, location, None)}
+
+  def sameValueAs(other: HandlingActivity): Boolean = {
     equals(other)
   }
 }

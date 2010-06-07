@@ -1,12 +1,14 @@
-package se.citerus.dddsample.domain.model.cargo;
+package se.citerus.dddsample.domain.model.cargo
+
+;
 
 import se.citerus.dddsample.domain.shared.ValueObject;
 
 /**
  * Routing status. 
  */
-sealed abstract class RoutingStatus extends ValueObject[RoutingStatus]  {
-  def sameValueAs(other:RoutingStatus) : Boolean = {
+sealed abstract class RoutingStatus extends ValueObject[RoutingStatus] {
+  def sameValueAs(other: RoutingStatus): Boolean = {
     other != null && this.equals(other)
   }
 }

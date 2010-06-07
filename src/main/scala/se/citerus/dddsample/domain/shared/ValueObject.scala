@@ -4,7 +4,7 @@ import java.io.Serializable
 
 /**
  * A value object, as described in the DDD book.
- * 
+ *
  */
 trait ValueObject[T] extends Serializable {
   /**
@@ -13,5 +13,5 @@ trait ValueObject[T] extends Serializable {
    * @param other The other value object.
    * @return <code>true</code> if the given value object's and this value object's attributes are the same.
    */
-  def sameValueAs(other:T) : Boolean
+  def sameValueAs(other: T): Boolean
 }

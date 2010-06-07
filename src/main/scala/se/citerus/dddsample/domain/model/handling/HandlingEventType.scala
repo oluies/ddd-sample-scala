@@ -6,22 +6,22 @@ import se.citerus.dddsample.domain.shared.ValueObject;
  * Handling event type. Either requires or prohibits a carrier movement
  * association, it's never optional.
  */
-sealed abstract class HandlingEventType(voyageRequired:Boolean) extends ValueObject[HandlingEventType] {
+sealed abstract class HandlingEventType(voyageRequired: Boolean) extends ValueObject[HandlingEventType] {
   /**
    * @return True if a voyage association is required for this event type.
    */
-  def requiresVoyage() : Boolean = {
+  def requiresVoyage(): Boolean = {
     voyageRequired
   }
 
   /**
    * @return True if a voyage association is prohibited for this event type.
    */
-  def prohibitsVoyage() : Boolean = {
+  def prohibitsVoyage(): Boolean = {
     !requiresVoyage()
   }
 
-  override def sameValueAs(other:HandlingEventType) : Boolean = {
+  override def sameValueAs(other: HandlingEventType): Boolean = {
     other != null && this.equals(other)
   }
 }

@@ -2,7 +2,7 @@ package se.citerus.dddsample.domain.shared
 
 /**
  * An entity, as explained in the DDD book.
- *  
+ *
  */
 trait Entity[T] {
   /**
@@ -11,5 +11,5 @@ trait Entity[T] {
    * @param other The other entity.
    * @return true if the identities are the same, regardless of other attributes.
    */
-  def sameIdentityAs(other:T) : Boolean
+  def sameIdentityAs(other: T): Boolean
 }

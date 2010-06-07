@@ -3,29 +3,29 @@ package se.citerus.dddsample.domain.shared
 abstract class AbstractSpecification[T] extends Specification[T] {
 
   /**
-   * {@inheritDoc}
+   * { @inheritDoc }
    */
-  def isSatisfiedBy(t:T) : Boolean
+  def isSatisfiedBy(t: T): Boolean
 
   /**
-   * {@inheritDoc}
+   * { @inheritDoc }
    */
-  def and(specification:Specification[T]) : Specification[T] = {
+  def and(specification: Specification[T]): Specification[T] = {
     return new AndSpecification[T](this, specification);
   }
 
   /**
-   * {@inheritDoc}
+   * { @inheritDoc }
    */
-  def or(specification:Specification[T]) : Specification[T] = {
+  def or(specification: Specification[T]): Specification[T] = {
     return new OrSpecification[T](this, specification);
   }
 
   /**
-   * {@inheritDoc}
+   * { @inheritDoc }
    */
-  def not(specification:Specification[T]) : Specification[T] = {
+  def not(specification: Specification[T]): Specification[T] = {
     return new NotSpecification[T](specification);
   }
-  
+
 }

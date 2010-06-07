@@ -1,14 +1,16 @@
-package se.citerus.dddsample.domain.shared;
+package se.citerus.dddsample.domain.shared
+
+;
 
 /**
  * NOT decorator, used to create a new specifcation that is the inverse (NOT) of the given spec.
  */
-class NotSpecification[T](val spec1:Specification[T]) extends AbstractSpecification[T] {
+class NotSpecification[T](val spec1: Specification[T]) extends AbstractSpecification[T] {
 
   /**
-   * {@inheritDoc}
+   * { @inheritDoc }
    */
-  def isSatisfiedBy(t:T) : Boolean = {
-     ! spec1.isSatisfiedBy(t);
+  def isSatisfiedBy(t: T): Boolean = {
+    !spec1.isSatisfiedBy(t);
   }
 }
