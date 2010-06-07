@@ -1,6 +1,11 @@
 .classpath
 .project
-.scala_dependencies
-.settings/
+.scala_dependencies/*
+.settings/*
+.externalToolBuilders/*
+.idea/*
 target/
+bin/
+*.iml
+.*
 
