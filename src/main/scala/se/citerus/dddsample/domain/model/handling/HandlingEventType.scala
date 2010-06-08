@@ -26,6 +26,19 @@ sealed abstract class HandlingEventType(voyageRequired: Boolean) extends ValueOb
   }
 }
 
+object HandlingEventType {
+  def valueOf(eventTypeString:String) = {
+    val eventType:HandlingEventType = eventTypeString match {
+      case "RECEIVE" => RECEIVE
+      case "LOAD" => LOAD
+      case "UNLOAD" => UNLOAD
+      case "CLAIM" => CLAIM
+      case "CUSTOMS" => CUSTOMS
+    }
+    eventType
+  }
+}
+
 case object RECEIVE extends HandlingEventType(voyageRequired = false)
 case object LOAD extends HandlingEventType(voyageRequired = true)
 case object UNLOAD extends HandlingEventType(voyageRequired = true)

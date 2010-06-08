@@ -13,10 +13,11 @@ import se.citerus.dddsample.domain.model.voyage.VoyageNumber;
 import se.citerus.dddsample.domain.model.voyage.VoyageRepository;
 import se.citerus.dddsample.domain.service.RoutingService;
 
-class ExternalRoutingService extends RoutingService {
-  var graphTraversalService: GraphTraversalService;
-  var locationRepository: LocationRepository;
-  var voyageRepository: VoyageRepository;
-
-
-}
+class ExternalRoutingService 
+//extends RoutingService {
+//  //  var graphTraversalService: GraphTraversalService;
+//  //  var locationRepository: LocationRepository;
+//  //  var voyageRepository: VoyageRepository;
+//
+//
+//}

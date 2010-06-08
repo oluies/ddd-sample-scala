@@ -11,64 +11,73 @@ import java.util.Date
 object GraphTraversalServiceImpl {
   val ONE_MIN_MS = 1000 * 60;
   val ONE_DAY_MS = ONE_MIN_MS * 60 * 24;
+  
 }
 
 class GraphTraversalServiceImpl(dao: GraphDAO) extends GraphTraversalService {
+  
+  
+  
+  
   def findShortestPath(originUnLocode: String,
                        destinationUnLocode: String,
                        limitations: Properties): List[TransitPath] = {
-    val date = nextDate(new Date());
-    trimmedVertices = dao.listLocations.remove(originUnLocode).remove(destinationUnLocode)
-
+    val trimmedVertices = dao.listLocations.remove((n) => (n == originUnLocode) || (n == destinationUnLocode))
     val candidateCount = getRandomNumberOfCandidates
-    val candidates: List[TransitPath] = List()
-
+    
+    var candidates: List[TransitPath] = List()    
+    var date = nextDate(new Date());
     for (i <- 0 to candidateCount) {
-      allVertices = getRandomChunkOfLocations(allVertices);
-      val transitEdges: List[TransitEdge] = List()
+      val randomLocations = getRandomChunkOfLocations(trimmedVertices)
       val firstLegTo = trimmedVertices(0)
 
-      val fromDate = nextDate(date)
-      val toDate = nextDate(fromDate)
+      var fromDate:Date = nextDate(date)
+      var toDate = nextDate(fromDate)
       date = nextDate(toDate)
 
-      transitEdges.add(new TransitEdge(
-        dao.getVoyageNumber(originUnLocode, firstLegTo),
-        originUnLocode, firstLegTo, fromDate, toDate));
+      val firstVoyageNumber = dao.getVoyageNumber(originUnLocode, firstLegTo)
+      var transitEdges = List(new TransitEdge(firstVoyageNumber, originUnLocode, firstLegTo, fromDate, toDate))
 
-      for (j <- 0..allVertices.size() - 1) {
-        val curr = allVertices.get(j);
-        fval next = allVertices.get(j + 1);
-        fromDate = nextDate(date);
-        toDate = nextDate(fromDate);
-        date = nextDate(toDate);
-        transitEdges.add(new TransitEdge(dao.getVoyageNumber(curr, next), curr, next, fromDate, toDate));
+      val randomSizeCount = (randomLocations.size - 1)
+      for (j <- 0 to randomSizeCount) {
+        val curr = randomLocations(j)
+        val next = randomLocations(j + 1)
+        fromDate = nextDate(date)
+        toDate = nextDate(fromDate)
+        date = nextDate(toDate)
+        val voyageNumber = dao.getVoyageNumber(curr, next)
+        val transitEdge = new TransitEdge(voyageNumber, curr, next, fromDate, toDate)
+        transitEdges = transitEdges ::: List(transitEdge)
       }
 
-      val lastLegFrom = allVertices.last;
-      fromDate = nextDate(date);
-      toDate = nextDate(fromDate);
-      val transitEdge = new TransitEdge(dao.getVoyageNumber(lastLegFrom, destinationUnLocode),
-        lastLegFrom, destinationUnLocode, fromDate, toDate)
-      transitEdges.add(transitEdge);
+      val lastLegFrom = randomLocations.last
+      fromDate = nextDate(date)
+      toDate = nextDate(fromDate)
+      val voyageNumber = dao.getVoyageNumber(lastLegFrom, destinationUnLocode)
+      val transitEdge = new TransitEdge(voyageNumber, lastLegFrom, destinationUnLocode, fromDate, toDate)
+      transitEdges = transitEdges ::: List(transitEdge)
 
-      candidates.add(new TransitPath(transitEdges));
+      candidates = candidates ::: List(new TransitPath(transitEdges))
     }
 
     candidates
   }
-
+  
   private def nextDate(date: Date): Date = {
-    new Date(date.getTime() + ONE_DAY_MS + (random.nextInt(1000) - 500) * ONE_MIN_MS)
+    val random = new Random  
+    new Date(date.getTime() + GraphTraversalServiceImpl.ONE_DAY_MS + (random.nextInt(1000) - 500) * GraphTraversalServiceImpl.ONE_MIN_MS)
   }
 
   private def getRandomNumberOfCandidates = {
-    return 3 + random.nextInt(3)
+    val random = new Random
+    3 + random.nextInt(3)
   }
 
   private def getRandomChunkOfLocations(allLocations: List[String]): List[String] = {
-    locations = allLocations.shuffle;
-    val chunk = total > 4 ? 1 + new Random().nextInt(5): locations.size;
-    locations.subList(0, chunk);
+    val locations = scala.util.Random.shuffle(allLocations)
+    val total = locations.size
+    val random = new Random
+    val chunk = if (total > 4) 1 + random.nextInt(5) else total
+    locations.slice(0, chunk)
   }
 }
