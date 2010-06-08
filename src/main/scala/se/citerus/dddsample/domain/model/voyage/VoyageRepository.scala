@@ -1,6 +1,6 @@
 package se.citerus.dddsample.domain.model.voyage
 
-class VoyageRepository {
+trait VoyageRepository {
   /**
    * Finds a voyage using voyage number.
    *

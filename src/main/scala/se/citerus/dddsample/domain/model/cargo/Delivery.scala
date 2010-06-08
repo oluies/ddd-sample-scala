@@ -28,7 +28,7 @@ class Delivery private(val lastEvent: Option[HandlingEvent], itinerary: Itinerar
   val currentVoyage = calculateCurrentVoyage;
   val eta = calculateEta(itinerary);
   val nextExpectedActivity = calculateNextExpectedActivity(routeSpecification, itinerary);
-  val isUnloadedAtDestination = calculateUnloadedAtDestination(routeSpecification);
+  val unloadedAtDestination = calculateUnloadedAtDestination(routeSpecification);
 
   def calculateTransportStatus: TransportStatus = {
     val event = lastEvent.getOrElse {return NOT_RECEIVED}
@@ -154,11 +154,16 @@ class Delivery private(val lastEvent: Option[HandlingEvent], itinerary: Itinerar
             append(misdirected, other.misdirected).
             append(eta, other.eta).
             append(nextExpectedActivity, other.nextExpectedActivity).
-            append(isUnloadedAtDestination, other.isUnloadedAtDestination).
+            append(unloadedAtDestination, other.unloadedAtDestination).
             append(routingStatus, other.routingStatus).
             append(calculatedAt, other.calculatedAt).
             append(lastEvent, other.lastEvent).
             isEquals();
+  }
+  
+  override def equals(other:Any) : Boolean = other match {
+    case other: Delivery => other.getClass == getClass && sameValueAs(other)
+    case _ => false
   }
 }
 

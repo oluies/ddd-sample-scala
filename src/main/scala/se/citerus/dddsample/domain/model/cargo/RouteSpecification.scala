@@ -38,4 +38,9 @@ class RouteSpecification(val origin: Location, val destination: Location, val ar
             append(this.arrivalDeadline, other.arrivalDeadline).
             isEquals();
   }
+  
+  override def equals(other:Any) : Boolean = other match {
+    case other: RouteSpecification => other.getClass == getClass && sameValueAs(other)
+    case _ => false
+  }
 }

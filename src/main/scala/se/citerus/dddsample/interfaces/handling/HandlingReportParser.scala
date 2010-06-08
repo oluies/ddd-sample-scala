@@ -69,6 +69,6 @@ object HandlingReportParser {
       return null;
     }
 
-    return completionTime.getTime();
+    return completionTime.toGregorianCalendar().getTime();
   }
 }

@@ -17,58 +17,52 @@ class BookingServiceImpl(cargoRepository:CargoRepository,
                          locationRepository:LocationRepository,
                          routingService:RoutingService) extends BookingService {
 
+  val logger = LogFactory.getLog(getClass());
+
+  
   @Transactional
   def bookNewCargo(originUnLocode:UnLocode,
                    destinationUnLocode:UnLocode,
                    arrivalDeadline:Date ) : TrackingId = {
     val trackingId = cargoRepository.nextTrackingId();
-    val origin = locationRepository.find(originUnLocode);
-    val destination = locationRepository.find(destinationUnLocode);
+    val origin = locationRepository.find(originUnLocode).getOrElse { throw new IllegalArgumentException("origin not found") }
+    val destination = locationRepository.find(destinationUnLocode).getOrElse { throw new IllegalArgumentException("destination not found") };
     val routeSpecification = new RouteSpecification(origin, destination, arrivalDeadline);
     val cargo = new Cargo(trackingId, routeSpecification);
 
     cargoRepository.store(cargo);
-    logger.info("Booked new cargo with tracking id " + cargo.trackingId().idString());
+    logger.info("Booked new cargo with tracking id " + cargo.trackingId.idString);
 
-    return cargo.trackingId();
+    return cargo.trackingId;
   }
 
   @Transactional
-  void requestPossibleRoutesForCargo(trackingId:TrackingId) : List<Itinerary> = {
-    var cargo = cargoRepository.find(trackingId);
+  def requestPossibleRoutesForCargo(trackingId:TrackingId) : List[Itinerary] = {
+    var cargo = cargoRepository.find(trackingId).getOrElse { return List() };
 
-    if (cargo == null) {
-      return List()
-    }
-
-    routingService.fetchRoutesForSpecification(cargo.routeSpecification());
+    routingService.fetchRoutesForSpecification(cargo.routeSpecification);
   }
 
   @Transactional
   def assignCargoToRoute(itinerary:Itinerary, trackingId:TrackingId) {
-    val cargo = cargoRepository.find(trackingId);
-    if (cargo == null) {
-      throw new IllegalArgumentException("Can't assign itinerary to non-existing cargo " + trackingId);
-    }
+    val cargo = cargoRepository.find(trackingId).getOrElse { throw new IllegalArgumentException("Can't assign itinerary to non-existing cargo " + trackingId) }
 
-    cargo.assignToRoute(itinerary);
-    cargoRepository.store(cargo);
+    cargo.assignToRoute(itinerary)
+    cargoRepository.store(cargo)
 
     logger.info("Assigned cargo " + trackingId + " to new route");
   }
 
   @Transactional
   def changeDestination(trackingId:TrackingId, unLocode:UnLocode) {
-    val cargo = cargoRepository.find(trackingId);
-    val newDestination = locationRepository.find(unLocode);
+    val cargo = cargoRepository.find(trackingId).getOrElse { throw new IllegalArgumentException("Can't find cargo with tracking id = " + trackingId) }
+    val newDestination = locationRepository.find(unLocode).getOrElse { throw new IllegalArgumentException("location not found") };
 
-    val routeSpecification = new RouteSpecification(
-      cargo.origin(), newDestination, cargo.routeSpecification().arrivalDeadline()
-    );
+    val routeSpecification = new RouteSpecification(cargo.origin, newDestination, cargo.routeSpecification.arrivalDeadline);
     cargo.specifyNewRoute(routeSpecification);
 
     cargoRepository.store(cargo);
-    logger.info("Changed destination for cargo " + trackingId + " to " + routeSpecification.destination());
+    logger.info("Changed destination for cargo " + trackingId + " to " + routeSpecification.destination);
   }
 
 }

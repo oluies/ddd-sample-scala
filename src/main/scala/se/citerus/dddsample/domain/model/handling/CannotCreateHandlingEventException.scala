@@ -1,5 +1,3 @@
 package se.citerus.dddsample.domain.model.handling
 
-case class CannotCreateHandlingEventException(s:String) extends Exception(s) {
-  
-}
+case class CannotCreateHandlingEventException(e:Exception) extends Exception(e) 

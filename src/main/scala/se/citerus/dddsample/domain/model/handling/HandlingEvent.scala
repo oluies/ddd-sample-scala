@@ -55,20 +55,17 @@ class HandlingEvent(val cargo: Cargo,
   Validate.notNull(registrationTime, "Registration time is required");
   Validate.notNull(eventType, "Handling event type is required");
   Validate.notNull(location, "Location is required");
-  Validate.notNull(voyage, "Voyage is required");
 
   require(!eventType.prohibitsVoyage(), "Voyage is not allowed with event type " + eventType)
 
-
   def sameEventAs(other: HandlingEvent): Boolean = {
-    return other != null && new EqualsBuilder().
+    other != null && new EqualsBuilder().
             append(this.cargo, other.cargo).
             append(this.voyage, other.voyage).
             append(this.completionTime, other.completionTime).
             append(this.location, other.location).
             append(this.eventType, other.eventType).
             isEquals();
-    false
   }
 
 }
@@ -76,10 +73,10 @@ class HandlingEvent(val cargo: Cargo,
 /**
  * Creates handling events.
  */
-object HandlingEvent {
-  var CargoRepository cargoRepository;
-  var VoyageRepository voyageRepository;
-  var LocationRepository locationRepository;
+class HandlingEventFactory(
+    cargoRepository:CargoRepository,
+  voyageRepository:VoyageRepository,
+  locationRepository:LocationRepository) {
 
   /**
    * @param registrationTime time when this event was received by the system
@@ -93,7 +90,7 @@ object HandlingEvent {
    * @throws UnknownLocationException if there's no location with this UN Locode
    * @return A handling event.
    */
-  def apply(registrationTime: Date, completionTime: Date, trackingId: TrackingId,
+  def createHandlingEvent(registrationTime: Date, completionTime: Date, trackingId: TrackingId,
             voyageNumber: VoyageNumber, unlocode: UnLocode, eventType: HandlingEventType): HandlingEvent = {
     val cargo = findCargo(trackingId);
     val voyage = findVoyage(voyageNumber);
@@ -101,41 +98,29 @@ object HandlingEvent {
 
     try {
       if (voyage == null) {
-        return new HandlingEvent(cargo, completionTime, registrationTime, eventType, location);
+        return new HandlingEvent(cargo, completionTime, registrationTime, eventType, location, null);
       } else {
         return new HandlingEvent(cargo, completionTime, registrationTime, eventType, location, voyage);
       }
     } catch {
-      case e => throw new CannotCreateHandlingEventException(e);
+      case e:Exception => throw new CannotCreateHandlingEventException(e);
     }
   }
 
   def findCargo(trackingId:TrackingId): Cargo = {
-    val cargo = cargoRepository.find(trackingId);
-    if (cargo == null) throw new UnknownCargoException(trackingId);
-    return cargo;
+    cargoRepository.find(trackingId).getOrElse { throw new UnknownCargoException(trackingId) }
   }
 
-  def findVoyage(VoyageNumber voyageNumber): Voyage = {
+  def findVoyage(voyageNumber:VoyageNumber) : Voyage = {
     if (voyageNumber == null) {
       return null;
     }
 
-    val voyage = voyageRepository.find(voyageNumber);
-    if (voyage == null) {
-      throw new UnknownVoyageException(voyageNumber);
-    }
-
-    return voyage;
+    voyageRepository.find(voyageNumber).getOrElse { throw new UnknownVoyageException(voyageNumber) };
   }
 
-  def findLocation(unlocode: Unlocode): Location = {
-    val location = locationRepository.find(unlocode);
-    if (location == null) {
-      throw new UnknownLocationException(unlocode);
-    }
-
-    return location;
+  def findLocation(unlocode: UnLocode): Location = {
+    locationRepository.find(unlocode).getOrElse { throw new UnknownLocationException(unlocode) };
   }
 
 }
