@@ -55,12 +55,15 @@ class Cargo(val trackingId: TrackingId, private var mutableRouteSpecification: R
   // However, at creation, cargo origin can be derived from the initial route specification.
   val origin = mutableRouteSpecification.origin
 
+  private var mutableItinerary: Itinerary = Itinerary.EMPTY_ITINERARY
+    
   def routeSpecification = { mutableRouteSpecification }
   def delivery = { mutableDelivery }
-  
-  private var mutableItinerary: Itinerary = Itinerary.EMPTY_ITINERARY
+  def itinerary() = { mutableItinerary }
 
-  private var mutableDelivery: Delivery = Delivery.derivedFrom(mutableRouteSpecification, mutableItinerary, HandlingHistory.EMPTY);
+  private var mutableDelivery: Delivery = {
+    Delivery.derivedFrom(mutableRouteSpecification, mutableItinerary, HandlingHistory.EMPTY);
+  }
   
   /**
    * Attach a new itinerary to this cargo.

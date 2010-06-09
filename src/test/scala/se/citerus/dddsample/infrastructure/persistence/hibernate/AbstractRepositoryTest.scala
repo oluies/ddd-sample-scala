@@ -1,5 +1,7 @@
 package se.citerus.dddsample.infrastructure.persistence.hibernate;
 
+import scala.reflect.BeanProperty
+
 import org.hibernate.SessionFactory;
 import org.hibernate.classic.Session;
 import org.springframework.jdbc.core.simple.SimpleJdbcTemplate;
@@ -54,14 +56,14 @@ class AbstractRepositoryTest extends AbstractTransactionalDataSourceSpringContex
   // Instead of exposing a getId() on persistent classes
   protected def getLongId(o:Any) : Long = {
     if (getSession().contains(o)) {
-      return (Long) getSession().getIdentifier(o);
+      return (Long) (getSession().getIdentifier(o));
     } else {
       try {
         var id:Field = o.getClass().getDeclaredField("id");
         id.setAccessible(true);
-        return (Long) id.get(o);
-      } catch (Exception e) {
-        throw new RuntimeException(e);
+        return (Long) (id.get(o));
+      } catch {
+        case e:Exception => throw new RuntimeException(e);
       }
     }
   }

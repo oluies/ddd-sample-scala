@@ -15,9 +15,7 @@ object GraphTraversalServiceImpl {
 }
 
 class GraphTraversalServiceImpl(dao: GraphDAO) extends GraphTraversalService {
-  
-  
-  
+ 
   
   def findShortestPath(originUnLocode: String,
                        destinationUnLocode: String,

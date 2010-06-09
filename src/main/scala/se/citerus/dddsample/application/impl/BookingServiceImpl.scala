@@ -1,8 +1,9 @@
 package se.citerus.dddsample.application.impl
 
 import org.apache.commons.logging.Log
-import se.citerus.dddsample.domain.model.cargo._;
 import org.apache.commons.logging.LogFactory;
+
+import se.citerus.dddsample.domain.model.cargo._;
 import org.springframework.transaction.annotation.Transactional;
 import se.citerus.dddsample.application.BookingService;
 
@@ -17,8 +18,7 @@ class BookingServiceImpl(cargoRepository:CargoRepository,
                          locationRepository:LocationRepository,
                          routingService:RoutingService) extends BookingService {
 
-  val logger = LogFactory.getLog(getClass());
-
+  private val logger = LogFactory.getLog(getClass());
   
   @Transactional
   def bookNewCargo(originUnLocode:UnLocode,

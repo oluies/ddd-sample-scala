@@ -8,5 +8,11 @@ class CargoRoutingDTO(
         val finalDestination: String,
         val arrivalDeadline: Date,
         val misrouted: Boolean) {
-  val legs: List[LegDTO] = List()
+  var legs: List[LegDTO] = List()
+  
+  
+  def addLeg(voyageNumber:String, from:String, to:String, loadTime:Date, unloadTime:Date) = {
+    legs = legs ::: List(new LegDTO(voyageNumber, from, to, loadTime, unloadTime));
+  }
+
 }
