@@ -19,7 +19,7 @@ class ExternalRoutingService
 //  var locationRepository: LocationRepository;
 //  var voyageRepository: VoyageRepository;
 {  
-  //  public List<Itinerary> fetchRoutesForSpecification(RouteSpecification routeSpecification) {
+  //  def fetchRoutesForSpecification(routeSpecification:RouteSpecification) : List<Itinerary> =  {
   //    /*
   //      The RouteSpecification is picked apart and adapted to the external API.
   //     */

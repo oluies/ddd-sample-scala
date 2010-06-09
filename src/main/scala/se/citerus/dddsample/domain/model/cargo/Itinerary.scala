@@ -15,16 +15,20 @@ import java.util.Date;
 object Itinerary {
   val EMPTY_ITINERARY: Itinerary = new Itinerary();
   val END_OF_DAYS: Date = new Date(Math.MAX_LONG);
+  
+  def apply(legs: List[Leg]) = {
+    require(! legs.isEmpty, "legs cannot be empty")
+    require(! legs.exists(_ == null), "no null elements allowed in list");
+    
+    new Itinerary(legs)
+  }
 }
 
 /**
  * An itinerary.
  *
  */
-class Itinerary(val legs: List[Leg] = List()) extends ValueObject[Itinerary] {
-  require(!legs.isEmpty, "legs cannot be empty")
-
-  //Validate.noNullElements(legs);
+class Itinerary private (val legs: List[Leg] = List()) extends ValueObject[Itinerary] {
 
   /**
    * Test if the given handling event is expected when executing this itinerary.

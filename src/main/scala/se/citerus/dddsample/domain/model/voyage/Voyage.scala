@@ -34,15 +34,15 @@ class Voyage(val voyageNumber: VoyageNumber, val schedule: Schedule) extends Ent
  * Builder pattern is used for incremental construction
  * of a Voyage aggregate. This serves as an aggregate factory. 
  */
-class Builder(val voyageNumber: VoyageNumber, var departureLocation: Location, val carrierMovements: List[CarrierMovement] = List()) {
+class VoyageBuilder(val voyageNumber: VoyageNumber, var departureLocation: Location, val carrierMovements: List[CarrierMovement] = List()) {
   Validate.notNull(voyageNumber, "Voyage number is required");
   Validate.notNull(departureLocation, "Departure location is required");
 
-  def addMovement(arrivalLocation: Location, departureTime: Date, arrivalTime: Date): Builder = {
+  def addMovement(arrivalLocation: Location, departureTime: Date, arrivalTime: Date): VoyageBuilder = {
     val newMovements = carrierMovements ::: List(new CarrierMovement(departureLocation, arrivalLocation,
       departureTime, arrivalTime))
     // Next departure location is the same as this arrival location
-    val builder = new Builder(voyageNumber, arrivalLocation, newMovements)
+    val builder = new VoyageBuilder(voyageNumber, arrivalLocation, newMovements)
     builder
   }
 
