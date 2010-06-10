@@ -1,16 +1,17 @@
 package se.citerus.dddsample.infrastructure.persistence.hibernate;
 
-import scala.reflect.BeanProperty
-
 import org.hibernate.SessionFactory;
 import org.hibernate.classic.Session;
+
+import se.citerus.dddsample.application.util.SampleDataGenerator;
+import se.citerus.dddsample.domain.model.handling.HandlingEventFactory;
+import se.citerus.dddsample.domain.model.handling.HandlingEventRepository;
+
 import org.springframework.jdbc.core.simple.SimpleJdbcTemplate;
 import org.springframework.orm.hibernate3.HibernateTransactionManager;
 import org.springframework.test.AbstractTransactionalDataSourceSpringContextTests;
 import org.springframework.transaction.support.TransactionTemplate;
-import se.citerus.dddsample.application.util.SampleDataGenerator;
-import se.citerus.dddsample.domain.model.handling.HandlingEventFactory;
-import se.citerus.dddsample.domain.model.handling.HandlingEventRepository;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory._;
 
 import java.lang.reflect.Field;
 
@@ -21,8 +22,8 @@ class AbstractRepositoryTest extends AbstractTransactionalDataSourceSpringContex
 
   var sessionFactory:SessionFactory;
   var sjt:SimpleJdbcTemplate;
-  @BeanProperty var handlingEventFactory:HandlingEventFactory;
-  @BeanProperty var handlingEventRepository:HandlingEventRepository;
+  var handlingEventFactory:HandlingEventFactory;
+  var handlingEventRepository:HandlingEventRepository;
 
   def setSessionFactory(sessionFactory:SessionFactory) = {
     this.sessionFactory = sessionFactory;
@@ -56,12 +57,12 @@ class AbstractRepositoryTest extends AbstractTransactionalDataSourceSpringContex
   // Instead of exposing a getId() on persistent classes
   protected def getLongId(o:Any) : Long = {
     if (getSession().contains(o)) {
-      return (Long) (getSession().getIdentifier(o));
+      return getSession().getIdentifier(o).asInstanceOf[Long];
     } else {
       try {
-        var id:Field = o.getClass().getDeclaredField("id");
+        var id:Field = o.asInstanceOf[AnyRef].getClass().getDeclaredField("id");
         id.setAccessible(true);
-        return (Long) (id.get(o));
+        return id.get(o).asInstanceOf[Long];
       } catch {
         case e:Exception => throw new RuntimeException(e);
       }

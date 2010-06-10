@@ -5,19 +5,21 @@ import org.apache.commons.logging.LogFactory;
 
 import scala.reflect.BeanProperty
 import se.citerus.dddsample.interfaces.booking.facade.BookingServiceFacade
+import se.citerus.dddsample.application._
+import se.citerus.dddsample.interfaces.booking.facade.dto._
+import se.citerus.dddsample.domain.model.cargo._
+import se.citerus.dddsample.domain.model.voyage._
+import se.citerus.dddsample.domain.model.location._
+import se.citerus.dddsample.interfaces.booking.facade.internal.assembler._
+
 import java.util.Date
-import se.citerus.dddsample.interfaces.booking.facade.dto.{LocationDTO, RouteCandidateDTO, CargoRoutingDTO}
-import se.citerus.dddsample.domain.model.cargo._;
-import se.citerus.dddsample.domain.model.voyage._;
-import se.citerus.dddsample.domain.model.location._;
-import se.citerus.dddsample.application._;
 
 
 class BookingServiceFacadeImpl extends BookingServiceFacade {
-  @BeanProperty var bookingService:BookingService;
-  @BeanProperty var locationRepository:LocationRepository;
-  @BeanProperty var cargoRepository:CargoRepository;
-  @BeanProperty var voyageRepository:VoyageRepository;
+  var bookingService:BookingService = _
+  var locationRepository:LocationRepository = _
+  var cargoRepository:CargoRepository = _
+  var voyageRepository:VoyageRepository = _
   
   val logger = LogFactory.getLog(getClass());
   
@@ -35,8 +37,9 @@ class BookingServiceFacadeImpl extends BookingServiceFacade {
     return trackingId.idString;
   }
 
- def loadCargoForRouting(trackingId:String) :CargoRoutingDTO = {
-    val cargo = cargoRepository.find(new TrackingId(trackingId));
+ def loadCargoForRouting(trackingId:String) : CargoRoutingDTO = {
+    val o:Option[Cargo] = cargoRepository.find(new TrackingId(trackingId))
+    val cargo:Cargo = o.getOrElse { throw new RuntimeException("Not found") };
     return CargoRoutingDTOAssembler.toDTO(cargo);
   }
 
@@ -63,7 +66,7 @@ class BookingServiceFacadeImpl extends BookingServiceFacade {
   def requestPossibleRoutesForCargo(trackingId:String) :  List[RouteCandidateDTO] = {
     val itineraries:List[Itinerary] = bookingService.requestPossibleRoutesForCargo(new TrackingId(trackingId));
 
-    val routeCandidates:List[RouteCandidateDTO] = List()
+    var routeCandidates:List[RouteCandidateDTO] = List()
     for (itinerary <- itineraries) {
       routeCandidates = ItineraryCandidateDTOAssembler.toDTO(itinerary) :: routeCandidates
     }

@@ -1,6 +1,5 @@
 package se.citerus.dddsample.infrastructure.persistence.hibernate
 
-
 import org.springframework.stereotype.Repository;
 import se.citerus.dddsample.domain.model.cargo.Cargo;
 import se.citerus.dddsample.domain.model.cargo.CargoRepository;
@@ -33,6 +32,8 @@ class CargoRepositoryHibernate extends HibernateRepository with CargoRepository 
   }
 
   def findAll() : List[Cargo] = {
-    return getSession().createQuery("from Cargo").list();
+    val query = getSession().createQuery("from Cargo")
+    val cargoList = List[Cargo]() ++ query.list().asInstanceOf[List[Cargo]];
+    cargoList
   }
 }
