@@ -28,7 +28,7 @@ object Itinerary {
  * An itinerary.
  *
  */
-class Itinerary private (val legs: List[Leg] = List()) extends ValueObject[Itinerary] {
+class Itinerary(val legs: List[Leg] = List()) extends ValueObject[Itinerary] {
 
   /**
    * Test if the given handling event is expected when executing this itinerary.
