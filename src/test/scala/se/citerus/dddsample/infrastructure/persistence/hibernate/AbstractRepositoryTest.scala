@@ -20,10 +20,10 @@ class AbstractRepositoryTest extends AbstractTransactionalDataSourceSpringContex
   setAutowireMode(AUTOWIRE_BY_NAME);
   setDependencyCheck(false);
 
-  var sessionFactory:SessionFactory;
-  var sjt:SimpleJdbcTemplate;
-  var handlingEventFactory:HandlingEventFactory;
-  var handlingEventRepository:HandlingEventRepository;
+  var sessionFactory:SessionFactory = _
+  var sjt:SimpleJdbcTemplate = _
+  var handlingEventFactory:HandlingEventFactory = _
+  var handlingEventRepository:HandlingEventRepository = _
 
   def setSessionFactory(sessionFactory:SessionFactory) = {
     this.sessionFactory = sessionFactory;
@@ -43,10 +43,11 @@ class AbstractRepositoryTest extends AbstractTransactionalDataSourceSpringContex
     Array("/context-infrastructure-persistence.xml", "context-domain.xml")
   }
 
-  @Override
+  override
   protected def onSetUpInTransaction() : Unit = {
     // TODO store Sample* and object instances here instead of handwritten SQL
-    SampleDataGenerator.loadSampleData(jdbcTemplate, new TransactionTemplate(transactionManager));
+    val dataGenerator = new SampleDataGenerator()
+    dataGenerator.loadSampleData(jdbcTemplate, new TransactionTemplate(transactionManager));
     sjt = new SimpleJdbcTemplate(jdbcTemplate);
   }
 
