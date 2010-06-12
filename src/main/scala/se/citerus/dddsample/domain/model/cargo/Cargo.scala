@@ -8,6 +8,8 @@ import se.citerus.dddsample.domain.model.handling.HandlingHistory;
 import se.citerus.dddsample.domain.model.location.Location;
 import se.citerus.dddsample.domain.model.location.Location;
 
+import scala.reflect.BeanProperty
+
 //import se.citerus.dddsample.domain.shared.DomainObjectUtils;
 import se.citerus.dddsample.domain.shared.Entity;
 
@@ -47,7 +49,9 @@ import se.citerus.dddsample.domain.shared.Entity;
  * in port etc), are captured in this aggregate.
  *
  */
-class Cargo(val trackingId: TrackingId, private var mutableRouteSpecification: RouteSpecification) extends Entity[Cargo] {
+class Cargo(
+    @BeanProperty val trackingId: TrackingId, 
+    private var mutableRouteSpecification: RouteSpecification) extends Entity[Cargo] {
   Validate.notNull(trackingId, "Tracking ID is required");
   Validate.notNull(mutableRouteSpecification, "Route specification is required");
 
@@ -59,7 +63,7 @@ class Cargo(val trackingId: TrackingId, private var mutableRouteSpecification: R
     
   def routeSpecification = { mutableRouteSpecification }
   def delivery = { mutableDelivery }
-  def itinerary() = { mutableItinerary }
+  def itinerary = { mutableItinerary }
 
   private var mutableDelivery: Delivery = {
     Delivery.derivedFrom(mutableRouteSpecification, mutableItinerary, HandlingHistory.EMPTY);

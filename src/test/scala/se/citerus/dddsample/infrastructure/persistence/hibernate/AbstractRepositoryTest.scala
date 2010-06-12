@@ -15,7 +15,7 @@ import org.springframework.beans.factory.config.AutowireCapableBeanFactory._;
 
 import java.lang.reflect.Field;
 
-class AbstractRepositoryTest extends AbstractTransactionalDataSourceSpringContextTests {
+abstract class AbstractRepositoryTest extends AbstractTransactionalDataSourceSpringContextTests {
 
   setAutowireMode(AUTOWIRE_BY_NAME);
   setDependencyCheck(false);
