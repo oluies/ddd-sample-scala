@@ -137,7 +137,7 @@
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-core</artifactId>
-            <version>3.3.1.GA</version>
+            <version>4.1.1.Final</version>
             <!--
                    God, what is it with Java and logging frameworks...
                    http://forum.hibernate.org/viewtopic.php?p=2401380
