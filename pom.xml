@@ -22,7 +22,7 @@
     </pluginRepositories>
     <properties>
         <spring.version>5.2.19.RELEASE</spring.version>
-        <cxf.version>3.3.8</cxf.version>
+        <cxf.version>3.4.0</cxf.version>
     </properties>
     <build>
         <plugins>
