@@ -1,6 +1,6 @@
 package se.citerus.dddsample.domain.model.handling
 
-import se.citerus.dddsample.domain.model.cargo.TrackingId;
+import se.citerus.dddsample.domain.model.cargo.TrackingId
 
 /**
  * Handling event repository.
@@ -12,11 +12,11 @@ trait HandlingEventRepository {
    *
    * @param event handling event to save
    */
-  def store(event: HandlingEvent): Unit;
+  def store(event: HandlingEvent): Unit
 
   /**
    * @param trackingId cargo tracking id
    * @return The handling history of this cargo
    */
-  def lookupHandlingHistoryOfCargo(trackingId: TrackingId): HandlingHistory;
+  def lookupHandlingHistoryOfCargo(trackingId: TrackingId): HandlingHistory
 }

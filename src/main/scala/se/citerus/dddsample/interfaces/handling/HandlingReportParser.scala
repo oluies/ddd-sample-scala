@@ -1,31 +1,34 @@
 package se.citerus.dddsample.interfaces.handling
 
-import com.aggregator.HandlingReport
-import se.citerus.dddsample.domain.model.location.UnLocode
-import se.citerus.dddsample.domain.model.handling.HandlingEventType
-import java.util.Date
-import scala.collection.mutable.ListBuffer
-import se.citerus.dddsample.domain.model.voyage.VoyageNumber
-import se.citerus.dddsample.domain.model.cargo.TrackingId
 import java.text.SimpleDateFormat
-import org.apache.commons.lang.StringUtils
+import java.util.Date
+
+import scala.collection.mutable.ListBuffer
+
+import com.aggregator.HandlingReport
+import org.apache.commons.lang3.StringUtils
+
+import se.citerus.dddsample.domain.model.cargo.TrackingId
+import se.citerus.dddsample.domain.model.handling.HandlingEventType
+import se.citerus.dddsample.domain.model.location.UnLocode
+import se.citerus.dddsample.domain.model.voyage.VoyageNumber
 
 object HandlingReportParser {
   val ISO_8601_FORMAT = "yyyy-MM-dd HH:mm"
 
   def parseUnLocode(unlocode: String, errors: ListBuffer[String]): UnLocode = {
-    try {
+    try
       return new UnLocode(unlocode);
-    } catch {
+    catch {
       case e => errors.append(e.getMessage());
     }
     return null;
   }
 
   def parseTrackingId(trackingId: String, errors: ListBuffer[String]): TrackingId = {
-    try {
+    try
       return new TrackingId(trackingId);
-    } catch {
+    catch {
       case e => errors.append(e.getMessage());
     }
     return null;
@@ -36,27 +39,30 @@ object HandlingReportParser {
       return null;
     }
 
-    try {
+    try
       return new VoyageNumber(voyageNumber);
-    } catch {
+    catch {
       case e => errors.append(e.getMessage());
     }
     return null;
   }
 
   def parseDate(completionTime: String, errors: ListBuffer[String]): Date = {
-    try {
+    try
       return new SimpleDateFormat(ISO_8601_FORMAT).parse(completionTime);
-    } catch {
-      case e => errors.append("Invalid date format: " + completionTime + ", must be on ISO 8601 format: " + ISO_8601_FORMAT);
+    catch {
+      case e =>
+        errors.append(
+          "Invalid date format: " + completionTime + ", must be on ISO 8601 format: " + ISO_8601_FORMAT
+        );
     }
     return null;
   }
 
   def parseEventType(eventType: String, errors: ListBuffer[String]): HandlingEventType = {
-    try {
+    try
       return HandlingEventType.valueOf(eventType);
-    } catch {
+    catch {
       case e => errors.append(eventType + " is not a valid handling event type.")
     }
     return null;

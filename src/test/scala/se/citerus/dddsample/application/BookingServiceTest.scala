@@ -1,60 +1,39 @@
 package se.citerus.dddsample.application
 
-import scala.collection.mutable.ListBuffer
-
-import junit.framework.TestCase
-import junit.framework.Assert._
-import org.easymock.EasyMock._
-import org.scalatest.junit.AssertionsForJUnit
-import org.scalatest.mock.EasyMockSugar;
-
-import se.citerus.dddsample.application.impl.BookingServiceImpl;
-import se.citerus.dddsample.domain.model.cargo.Cargo;
-import se.citerus.dddsample.domain.model.cargo.CargoRepository;
-import se.citerus.dddsample.domain.model.cargo.TrackingId;
-import se.citerus.dddsample.domain.model.location.LocationRepository;
-import se.citerus.dddsample.domain.model.location.UnLocode;
-import se.citerus.dddsample.domain.service.RoutingService;
-
-import se.citerus.dddsample.domain.model.location.SampleLocations._
-
 import java.util.Date
 
-class BookingServiceTest extends TestCase with AssertionsForJUnit with EasyMockSugar {
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.*
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.mockito.MockitoSugar
 
-  var bookingService:BookingServiceImpl = _
-  var cargoRepository:CargoRepository = _
-  var locationRepository:LocationRepository = _
-  var routingService:RoutingService = _
+import se.citerus.dddsample.application.impl.BookingServiceImpl
+import se.citerus.dddsample.domain.model.cargo.{Cargo, CargoRepository, TrackingId}
+import se.citerus.dddsample.domain.model.location.{LocationRepository, UnLocode}
+import se.citerus.dddsample.domain.model.location.SampleLocations.*
+import se.citerus.dddsample.domain.service.RoutingService
 
-  override def setUp() = {
-    cargoRepository = mock[CargoRepository]
-    locationRepository = mock[LocationRepository]
-    routingService = mock[RoutingService];
-    bookingService = new BookingServiceImpl(cargoRepository, locationRepository, routingService);
-  }
+class BookingServiceTest extends AnyFunSuite with Matchers with MockitoSugar {
 
-  override def tearDown() = {
-    verify(cargoRepository, locationRepository);
-  }
+  test("bookNewCargo allocates a tracking id and stores the cargo") {
+    val cargoRepository: CargoRepository       = mock[CargoRepository]
+    val locationRepository: LocationRepository = mock[LocationRepository]
+    val routingService: RoutingService         = mock[RoutingService]
+    val bookingService = new BookingServiceImpl(cargoRepository, locationRepository, routingService)
 
-  def testRegisterNew() = {
-    val expectedTrackingId = new TrackingId("TRK1");
-    val fromUnlocode = new UnLocode("USCHI");
-    val toUnlocode = new UnLocode("SESTO");
+    val expectedTrackingId = new TrackingId("TRK1")
+    val fromUnlocode       = new UnLocode("USCHI")
+    val toUnlocode         = new UnLocode("SESTO")
 
-    expecting {
-      call(cargoRepository.nextTrackingId()).andReturn(expectedTrackingId)
-      call(locationRepository.find(fromUnlocode)).andReturn(Some(CHICAGO))
-      call(locationRepository.find(toUnlocode)).andReturn(Some(STOCKHOLM))
-    }
-    
-    cargoRepository.store(isA(classOf[Cargo]));
+    when(cargoRepository.nextTrackingId()).thenReturn(expectedTrackingId)
+    when(locationRepository.find(fromUnlocode)).thenReturn(Some(CHICAGO))
+    when(locationRepository.find(toUnlocode)).thenReturn(Some(STOCKHOLM))
 
-    replay(cargoRepository, locationRepository);
+    val trackingId = bookingService.bookNewCargo(fromUnlocode, toUnlocode, new Date())
 
-    val trackingId = bookingService.bookNewCargo(fromUnlocode, toUnlocode, new Date());
-    assertEquals(expectedTrackingId, trackingId);
+    trackingId shouldEqual expectedTrackingId
+    verify(cargoRepository).store(any(classOf[Cargo]))
   }
 
 }

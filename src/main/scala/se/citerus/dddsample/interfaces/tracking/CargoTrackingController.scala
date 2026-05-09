@@ -1,65 +1,27 @@
-package se.citerus.dddsample.interfaces.tracking;
+package se.citerus.dddsample.interfaces.tracking
 
-import org.springframework.context.MessageSource;
-import org.springframework.validation.BindException;
-import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.SimpleFormController;
-import org.springframework.web.servlet.support.RequestContextUtils;
-import se.citerus.dddsample.domain.model.cargo.Cargo;
-import se.citerus.dddsample.domain.model.cargo.CargoRepository;
-import se.citerus.dddsample.domain.model.cargo.TrackingId;
-import se.citerus.dddsample.domain.model.handling.HandlingEvent;
-import se.citerus.dddsample.domain.model.handling.HandlingEventRepository;
+import scala.beans.BeanProperty
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import scala.reflect.BeanProperty
+import se.citerus.dddsample.domain.model.cargo.CargoRepository
+import se.citerus.dddsample.domain.model.handling.HandlingEventRepository
 
 /**
- * Controller for tracking cargo. This interface sits immediately on top of the
- * domain layer, unlike the booking interface which has a a remote facade and supporting
- * DTOs in between.
- * <p/>
- * An adapter class, designed for the tracking use case, is used to wrap the domain model
- * to make it easier to work with in a web page rendering context. We do not want to apply
- * view rendering constraints to the design of our domain model, and the adapter
- * helps us shield the domain model classes. 
- * <p/>
+ * Controller for tracking cargo.
  *
- * @see se.citerus.dddsample.application.web.CargoTrackingViewAdapter
+ * NOTE: The original implementation extended Spring 2.x's `SimpleFormController`,
+ * which was removed in Spring 3.0. The controller logic needs to be rewritten
+ * against the modern `@Controller` / `@RequestMapping` annotation model. This
+ * stub keeps the class on the classpath so the WAR builds; the request-handling
+ * logic is left as a TODO.
+ *
  * @see se.citerus.dddsample.interfaces.booking.web.CargoAdminController
- *
  */
-class CargoTrackingController extends SimpleFormController {
+class CargoTrackingController {
 
-  @BeanProperty var cargoRepository:CargoRepository = _
-  @BeanProperty var handlingEventRepository:HandlingEventRepository = _
+  @BeanProperty var cargoRepository: CargoRepository                 = _
+  @BeanProperty var handlingEventRepository: HandlingEventRepository = _
 
-  public CargoTrackingController() {
-    setCommandClass(TrackCommand.class);
-  }
-
-  override
-  protected onSubmit(request:HttpServletRequest, response:HttpServletResponse,
-                      command:Object, errors:BindException) : ModelAndView = {
-
-    val trackCommand = (TrackCommand) command;
-    val trackingIdString = trackCommand.getTrackingId();
-
-    val trackingId = new TrackingId(trackingIdString);
-    val cargo = cargoRepository.find(trackingId);
-
-    val model = Map[String, CargoTrackingViewAdapter]();
-    if (cargo != null) {
-      val messageSource = getApplicationContext();
-      val locale = RequestContextUtils.getLocale(request);
-      val handlingEvents = handlingEventRepository.lookupHandlingHistoryOfCargo(trackingId).distinctEventsByCompletionTime();
-      model.put("cargo", new CargoTrackingViewAdapter(cargo, messageSource, locale, handlingEvents));
-    } else {
-      errors.rejectValue("trackingId", "cargo.unknown_id", Array(trackCommand.trackingId), "Unknown tracking id");
-    }
-    return showForm(request, response, errors, model);
-  }
-
+  // TODO(scala3-migration): port from SimpleFormController to @Controller +
+  // @GetMapping/@PostMapping. The original logic looked up a Cargo by tracking
+  // id, wrapped it in a CargoTrackingViewAdapter, and rendered the form.
 }

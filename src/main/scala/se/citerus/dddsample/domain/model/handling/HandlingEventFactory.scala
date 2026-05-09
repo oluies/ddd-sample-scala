@@ -1,40 +1,25 @@
 package se.citerus.dddsample.domain.model.handling
 
+import java.util.Date
+
+import se.citerus.dddsample.domain.model.cargo.Cargo
+import se.citerus.dddsample.domain.model.cargo.CargoRepository
+import se.citerus.dddsample.domain.model.cargo.TrackingId
+import se.citerus.dddsample.domain.model.location.Location
+import se.citerus.dddsample.domain.model.location.LocationRepository
 import se.citerus.dddsample.domain.model.location.UnLocode
+import se.citerus.dddsample.domain.model.voyage.Voyage
 import se.citerus.dddsample.domain.model.voyage.VoyageNumber
-import se.citerus.dddsample.domain.shared.DomainEvent
-
-import se.citerus.dddsample.domain.model.cargo.Cargo;
-import se.citerus.dddsample.domain.model.cargo.CargoRepository;
-import se.citerus.dddsample.domain.model.cargo.TrackingId;
-import se.citerus.dddsample.domain.model.location.Location;
-import se.citerus.dddsample.domain.model.location.LocationRepository;
-import se.citerus.dddsample.domain.model.location.UnLocode;
-import se.citerus.dddsample.domain.model.voyage.Voyage;
-import se.citerus.dddsample.domain.model.voyage.VoyageNumber;
-import se.citerus.dddsample.domain.model.voyage.VoyageRepository;
-
-import java.util.Date;
-
-import org.apache.commons.lang.Validate;
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-import se.citerus.dddsample.domain.model.cargo.Cargo;
-import se.citerus.dddsample.domain.model.location.Location;
-import se.citerus.dddsample.domain.model.voyage.Voyage;
-import se.citerus.dddsample.domain.shared.DomainEvent;
-//import se.citerus.dddsample.domain.shared.DomainObjectUtils;
-import se.citerus.dddsample.domain.shared.ValueObject;
-
-import java.util.Date;
+import se.citerus.dddsample.domain.model.voyage.VoyageRepository
 
 /**
  * Creates handling events.
  */
 class HandlingEventFactory(
-    cargoRepository:CargoRepository,
-  voyageRepository:VoyageRepository,
-  locationRepository:LocationRepository) {
+    cargoRepository: CargoRepository,
+    voyageRepository: VoyageRepository,
+    locationRepository: LocationRepository
+) {
 
   /**
    * @param registrationTime time when this event was received by the system
@@ -42,43 +27,48 @@ class HandlingEventFactory(
    * @param trackingId cargo tracking id
    * @param voyageNumber voyage number
    * @param unlocode United Nations Location Code for the location of the event
-   * @param type type of event
+   * @param eventType type of event
    * @throws UnknownVoyageException if there's no voyage with this number
    * @throws UnknownCargoException if there's no cargo with this tracking id
    * @throws UnknownLocationException if there's no location with this UN Locode
    * @return A handling event.
    */
-  def createHandlingEvent(registrationTime: Date, completionTime: Date, trackingId: TrackingId,
-            voyageNumber: VoyageNumber, unlocode: UnLocode, eventType: HandlingEventType): HandlingEvent = {
-    val cargo = findCargo(trackingId);
-    val voyage = findVoyage(voyageNumber);
-    val location = findLocation(unlocode);
+  def createHandlingEvent(
+      registrationTime: Date,
+      completionTime: Date,
+      trackingId: TrackingId,
+      voyageNumber: VoyageNumber,
+      unlocode: UnLocode,
+      eventType: HandlingEventType
+  ): HandlingEvent = {
+    val cargo    = findCargo(trackingId)
+    val voyage   = findVoyage(voyageNumber)
+    val location = findLocation(unlocode)
 
-    try {
+    try
       if (voyage == null) {
-        return new HandlingEvent(cargo, completionTime, registrationTime, eventType, location, null);
+        new HandlingEvent(cargo, completionTime, registrationTime, eventType, location, null)
       } else {
-        return new HandlingEvent(cargo, completionTime, registrationTime, eventType, location, voyage);
+        new HandlingEvent(cargo, completionTime, registrationTime, eventType, location, voyage)
       }
-    } catch {
-      case e:Exception => throw new CannotCreateHandlingEventException(e);
+    catch {
+      case e: Exception => throw new CannotCreateHandlingEventException(e)
     }
   }
 
-  def findCargo(trackingId:TrackingId): Cargo = {
-    cargoRepository.find(trackingId).getOrElse { throw new UnknownCargoException(trackingId) }
-  }
+  def findCargo(trackingId: TrackingId): Cargo =
+    cargoRepository.find(trackingId).getOrElse(throw new UnknownCargoException(trackingId))
 
-  def findVoyage(voyageNumber:VoyageNumber) : Voyage = {
+  def findVoyage(voyageNumber: VoyageNumber): Voyage =
     if (voyageNumber == null) {
-      return null;
+      null
+    } else {
+      voyageRepository.find(voyageNumber).getOrElse {
+        throw new UnknownVoyageException(voyageNumber)
+      }
     }
 
-    voyageRepository.find(voyageNumber).getOrElse { throw new UnknownVoyageException(voyageNumber) };
-  }
-
-  def findLocation(unlocode: UnLocode): Location = {
-    locationRepository.find(unlocode).getOrElse { throw new UnknownLocationException(unlocode) };
-  }
+  def findLocation(unlocode: UnLocode): Location =
+    locationRepository.find(unlocode).getOrElse(throw new UnknownLocationException(unlocode))
 
 }

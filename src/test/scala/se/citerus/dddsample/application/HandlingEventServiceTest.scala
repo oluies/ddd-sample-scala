@@ -1,65 +1,60 @@
-package se.citerus.dddsample.application;
+package se.citerus.dddsample.application
 
-import junit.framework.TestCase
-import junit.framework.Assert._
-import org.easymock.EasyMock._
-import org.scalatest.junit.AssertionsForJUnit
-import org.scalatest.mock.EasyMockSugar;
+import java.util.Date
 
-import se.citerus.dddsample.application.impl.HandlingEventServiceImpl;
-import se.citerus.dddsample.domain.model.cargo.Cargo;
-import se.citerus.dddsample.domain.model.cargo.CargoRepository;
-import se.citerus.dddsample.domain.model.cargo.RouteSpecification;
-import se.citerus.dddsample.domain.model.cargo.TrackingId;
-import se.citerus.dddsample.domain.model.handling.HandlingEvent;
-import se.citerus.dddsample.domain.model.handling.HandlingEventFactory;
-import se.citerus.dddsample.domain.model.handling.HandlingEventRepository;
-import se.citerus.dddsample.domain.model.location.LocationRepository;
-import se.citerus.dddsample.domain.model.location.SampleLocations._;
-import se.citerus.dddsample.domain.model.voyage.SampleVoyages._;
-import se.citerus.dddsample.domain.model.handling._;
-import se.citerus.dddsample.domain.model.voyage.VoyageRepository;
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.*
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.mockito.MockitoSugar
 
-import java.util.Date;
+import se.citerus.dddsample.application.impl.HandlingEventServiceImpl
+import se.citerus.dddsample.domain.model.cargo.{
+  Cargo,
+  CargoRepository,
+  RouteSpecification,
+  TrackingId
+}
+import se.citerus.dddsample.domain.model.handling.{
+  HandlingEvent,
+  HandlingEventFactory,
+  HandlingEventRepository,
+  LOAD
+}
+import se.citerus.dddsample.domain.model.location.LocationRepository
+import se.citerus.dddsample.domain.model.location.SampleLocations.*
+import se.citerus.dddsample.domain.model.voyage.SampleVoyages.*
+import se.citerus.dddsample.domain.model.voyage.VoyageRepository
 
-class HandlingEventServiceTest extends TestCase with AssertionsForJUnit with EasyMockSugar {
-  var service:HandlingEventServiceImpl = _
-  var applicationEvents:ApplicationEvents = _
-  var cargoRepository:CargoRepository = _
-  var voyageRepository:VoyageRepository = _
-  var handlingEventRepository:HandlingEventRepository = _
-  var locationRepository:LocationRepository = _
+class HandlingEventServiceTest extends AnyFunSuite with Matchers with MockitoSugar {
 
-  private val cargo = new Cargo(new TrackingId("ABC"), new RouteSpecification(HAMBURG, TOKYO, new Date()));
+  private val cargo =
+    new Cargo(new TrackingId("ABC"), new RouteSpecification(HAMBURG, TOKYO, new Date()))
 
-  override def setUp() = {    
-    cargoRepository = mock[CargoRepository]
-    voyageRepository = mock[VoyageRepository]
-    handlingEventRepository = mock[HandlingEventRepository]
-    locationRepository = mock[LocationRepository]
-    applicationEvents = mock[ApplicationEvents]
+  test("registerHandlingEvent stores event and notifies listeners") {
+    val cargoRepository: CargoRepository                 = mock[CargoRepository]
+    val voyageRepository: VoyageRepository               = mock[VoyageRepository]
+    val handlingEventRepository: HandlingEventRepository = mock[HandlingEventRepository]
+    val locationRepository: LocationRepository           = mock[LocationRepository]
+    val applicationEvents: ApplicationEvents             = mock[ApplicationEvents]
 
-    val handlingEventFactory = new HandlingEventFactory(cargoRepository, voyageRepository, locationRepository);
-    service = new HandlingEventServiceImpl(handlingEventRepository, applicationEvents, handlingEventFactory);
-  }
+    when(cargoRepository.find(cargo.trackingId)).thenReturn(Some(cargo))
+    when(voyageRepository.find(CM001.voyageNumber)).thenReturn(Some(CM001))
+    when(locationRepository.find(STOCKHOLM.unlocode)).thenReturn(Some(STOCKHOLM))
 
-  override def tearDown() = {
-    verify(cargoRepository, voyageRepository, handlingEventRepository, applicationEvents);
-  }
+    val factory = new HandlingEventFactory(cargoRepository, voyageRepository, locationRepository)
+    val service = new HandlingEventServiceImpl(handlingEventRepository, applicationEvents, factory)
 
-  def testRegisterEvent() = {
-    expecting {
-      call(cargoRepository.find(cargo.trackingId)).andReturn(Some(cargo));
-      call(voyageRepository.find(CM001.voyageNumber)).andReturn(Some(CM001));
-      call(locationRepository.find(STOCKHOLM.unlocode)).andReturn(Some(STOCKHOLM));
-    }
-    
-    handlingEventRepository.store(isA(classOf[HandlingEvent]));
-    applicationEvents.cargoWasHandled(isA(classOf[HandlingEvent]));
+    service.registerHandlingEvent(
+      new Date(),
+      cargo.trackingId,
+      CM001.voyageNumber,
+      STOCKHOLM.unlocode,
+      LOAD
+    )
 
-    replay(cargoRepository, voyageRepository, handlingEventRepository, locationRepository, applicationEvents);
-
-    service.registerHandlingEvent(new Date(), cargo.trackingId, CM001.voyageNumber, STOCKHOLM.unlocode, LOAD);
+    verify(handlingEventRepository).store(any(classOf[HandlingEvent]))
+    verify(applicationEvents).cargoWasHandled(any(classOf[HandlingEvent]))
   }
 
 }

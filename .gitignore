@@ -1,11 +1,43 @@
+# Eclipse / IDEA
 .classpath
 .project
-.scala_dependencies/*
-.settings/*
-.externalToolBuilders/*
-.idea/*
-target/
-bin/
+.scala_dependencies/
+.settings/
+.externalToolBuilders/
+.idea/
 *.iml
-.*
 
+# sbt + bsp + metals
+target/
+project/target/
+project/project/
+.bsp/
+.metals/
+.bloop/
+.scala-build/
+metals.sbt
+
+# Scala compile output (legacy)
+bin/
+
+# OS / editors
+.DS_Store
+*.swp
+*~
+
+# Direnv / asdf
+.envrc.local
+
+# Logs
+*.log
+
+# Don't ignore .claude, .github, .scalafmt.conf etc. — explicit allow-list
+# below overrides earlier broad patterns from the original .gitignore.
+!.claude/
+!.github/
+!.scalafmt.conf
+!.scalafix.conf
+!.gitignore
+!.gitattributes
+!.scala-steward.conf
+.aider*

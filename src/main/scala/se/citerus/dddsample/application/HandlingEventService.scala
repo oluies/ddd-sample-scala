@@ -1,14 +1,12 @@
-package se.citerus.dddsample.application
+package se.citerus.dddsample.application;
 
-;
+import java.util.Date
 
-import se.citerus.dddsample.domain.model.cargo.TrackingId;
-import se.citerus.dddsample.domain.model.handling.HandlingEventType;
-import se.citerus.dddsample.domain.model.handling.HandlingEvent;
-import se.citerus.dddsample.domain.model.location.UnLocode;
+import se.citerus.dddsample.domain.model.cargo.TrackingId
+import se.citerus.dddsample.domain.model.handling.HandlingEvent
+import se.citerus.dddsample.domain.model.handling.HandlingEventType
+import se.citerus.dddsample.domain.model.location.UnLocode
 import se.citerus.dddsample.domain.model.voyage.VoyageNumber;
-
-import java.util.Date;
 
 /**
  * Handling event service.
@@ -26,12 +24,14 @@ trait HandlingEventService {
    * @param type type of event
    * @throws se.citerus.dddsample.domain.model.handling.CannotCreateHandlingEventException
    *  if a handling event that represents an actual event that's relevant to a cargo we're tracking
-   *  can't be created from the parameters 
+   *  can't be created from the parameters
    */
-  def registerHandlingEvent(completionTime: Date,
-                            trackingId: TrackingId,
-                            voyageNumber: VoyageNumber,
-                            unLocode: UnLocode,
-                            eventType: HandlingEventType): Unit;
+  def registerHandlingEvent(
+      completionTime: Date,
+      trackingId: TrackingId,
+      voyageNumber: VoyageNumber,
+      unLocode: UnLocode,
+      eventType: HandlingEventType
+  ): Unit;
 
 }
