@@ -1,6 +1,5 @@
 package se.citerus.dddsample.domain.shared
 
-
 /**
  * A domain event is something that is unique, but does not have a lifecycle.
  * The identity may be explicit, for example the sequence number of a payment,

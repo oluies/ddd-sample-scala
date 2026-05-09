@@ -1,10 +1,10 @@
 package se.citerus.dddsample.interfaces.booking.facade
 
-import se.citerus.dddsample.interfaces.booking.facade.dto.CargoRoutingDTO;
-import se.citerus.dddsample.interfaces.booking.facade.dto.LocationDTO;
-import se.citerus.dddsample.interfaces.booking.facade.dto.RouteCandidateDTO;
+import java.util.Date
 
-import java.util.Date;
+import se.citerus.dddsample.interfaces.booking.facade.dto.CargoRoutingDTO
+import se.citerus.dddsample.interfaces.booking.facade.dto.LocationDTO
+import se.citerus.dddsample.interfaces.booking.facade.dto.RouteCandidateDTO;
 
 /**
  * This facade shields the domain layer - model, services, repositories -

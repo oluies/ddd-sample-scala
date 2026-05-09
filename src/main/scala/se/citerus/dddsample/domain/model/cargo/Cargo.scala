@@ -1,17 +1,13 @@
 package se.citerus.dddsample.domain.model.cargo
 
-;
+import scala.beans.BeanProperty
 
-import org.apache.commons.lang.Validate;
-import se.citerus.dddsample.domain.model.handling.HandlingEvent;
-import se.citerus.dddsample.domain.model.handling.HandlingHistory;
-import se.citerus.dddsample.domain.model.location.Location;
-import se.citerus.dddsample.domain.model.location.Location;
+import org.apache.commons.lang3.Validate
 
-import scala.reflect.BeanProperty
-
-//import se.citerus.dddsample.domain.shared.DomainObjectUtils;
-import se.citerus.dddsample.domain.shared.Entity;
+import se.citerus.dddsample.domain.model.handling.HandlingEvent
+import se.citerus.dddsample.domain.model.handling.HandlingHistory
+import se.citerus.dddsample.domain.model.location.Location
+import se.citerus.dddsample.domain.shared.Entity
 
 /**
  * A Cargo. This is the central class in the domain model,
@@ -47,41 +43,40 @@ import se.citerus.dddsample.domain.shared.Entity;
  * of booking and tracking cargo. All important business rules for determining whether
  * or not a cargo is misdirected, what the current status of the cargo is (on board carrier,
  * in port etc), are captured in this aggregate.
- *
  */
 class Cargo(
-    @BeanProperty val trackingId: TrackingId, 
-    private var mutableRouteSpecification: RouteSpecification) extends Entity[Cargo] {
-  Validate.notNull(trackingId, "Tracking ID is required");
-  Validate.notNull(mutableRouteSpecification, "Route specification is required");
+    @BeanProperty val trackingId: TrackingId,
+    private var mutableRouteSpecification: RouteSpecification
+) extends Entity[Cargo] {
+  Validate.notNull(trackingId, "Tracking ID is required")
+  Validate.notNull(mutableRouteSpecification, "Route specification is required")
 
   // Cargo origin never changes, even if the route specification changes.
   // However, at creation, cargo origin can be derived from the initial route specification.
   val origin = mutableRouteSpecification.origin
 
   private var mutableItinerary: Itinerary = Itinerary.EMPTY_ITINERARY
-    
-  def routeSpecification = { mutableRouteSpecification }
-  def delivery = { mutableDelivery }
-  def itinerary = { mutableItinerary }
 
-  private var mutableDelivery: Delivery = {
-    Delivery.derivedFrom(mutableRouteSpecification, mutableItinerary, HandlingHistory.EMPTY);
-  }
-  
+  def routeSpecification = mutableRouteSpecification
+  def delivery           = mutableDelivery
+  def itinerary          = mutableItinerary
+
+  private var mutableDelivery: Delivery =
+    Delivery.derivedFrom(mutableRouteSpecification, mutableItinerary, HandlingHistory.EMPTY)
+
   /**
    * Attach a new itinerary to this cargo.
    *
    * @param itinerary an itinerary. May not be null.
    */
-  def assignToRoute(newItinerary: Itinerary) : Unit = {
-    Validate.notNull(newItinerary, "Itinerary is required for assignment");
+  def assignToRoute(newItinerary: Itinerary): Unit = {
+    Validate.notNull(newItinerary, "Itinerary is required for assignment")
 
-    mutableItinerary = newItinerary;
+    mutableItinerary = newItinerary
     // Handling consistency within the Cargo aggregate synchronously
-    mutableDelivery = mutableDelivery.updateOnRouting(mutableRouteSpecification, mutableItinerary);
+    mutableDelivery = mutableDelivery.updateOnRouting(mutableRouteSpecification, mutableItinerary)
   }
-  
+
   /**
    * Updates all aspects of the cargo aggregate status
    * based on the current route specification, itinerary and handling of the cargo.
@@ -97,38 +92,34 @@ class Cargo(
    *
    * @param handlingHistory handling history
    */
-  def deriveDeliveryProgress(handlingHistory:HandlingHistory) : Unit = {
+  def deriveDeliveryProgress(handlingHistory: HandlingHistory): Unit =
     mutableDelivery = Delivery.derivedFrom(routeSpecification, mutableItinerary, handlingHistory)
-  }
-  
-    /**
+
+  /**
    * Specifies a new route for this cargo.
    *
    * @param routeSpecification route specification.
    */
-  def specifyNewRoute(routeSpecification:RouteSpecification) : Unit = {
-    Validate.notNull(routeSpecification, "Route specification is required");
+  def specifyNewRoute(routeSpecification: RouteSpecification): Unit = {
+    Validate.notNull(routeSpecification, "Route specification is required")
 
-    mutableRouteSpecification = routeSpecification;
+    mutableRouteSpecification = routeSpecification
     // Handling consistency within the Cargo aggregate synchronously
-    mutableDelivery = mutableDelivery.updateOnRouting(mutableRouteSpecification, mutableItinerary);
-  }
-  
-  def sameIdentityAs(other: Cargo): Boolean = {
-    other != null && trackingId.sameValueAs(other.trackingId)
-  }
-  
-  override def hashCode : Int = {
-    trackingId.hashCode
-  }
-  
-  override def equals(other:Any) : Boolean = other match {
-    case other: Cargo => other.getClass == getClass && sameIdentityAs(other)
-    case _ => false
+    mutableDelivery = mutableDelivery.updateOnRouting(mutableRouteSpecification, mutableItinerary)
   }
 
-  override def toString : String = {
-    trackingId.toString
+  def sameIdentityAs(other: Cargo): Boolean =
+    other != null && trackingId.sameValueAs(other.trackingId)
+
+  override def hashCode: Int =
+    trackingId.hashCode
+
+  override def equals(other: Any): Boolean = other match {
+    case other: Cargo => other.getClass == getClass && sameIdentityAs(other)
+    case _            => false
   }
-  
+
+  override def toString: String =
+    trackingId.toString
+
 }

@@ -1,6 +1,4 @@
-package se.citerus.dddsample.application
-
-;
+package se.citerus.dddsample.application;
 
 import se.citerus.dddsample.domain.model.cargo.TrackingId;
 

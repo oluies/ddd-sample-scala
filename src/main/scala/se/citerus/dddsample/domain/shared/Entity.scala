@@ -2,9 +2,9 @@ package se.citerus.dddsample.domain.shared
 
 /**
  * An entity, as explained in the DDD book.
- *
  */
 trait Entity[T] {
+
   /**
    * Entities compare by identity, not by attributes.
    *

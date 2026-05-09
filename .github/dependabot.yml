@@ -1,0 +1,57 @@
+version: 2
+updates:
+  # sbt dependencies (build.sbt + project/*.sbt). Scala Steward handles most
+  # Scala-side bumps with deeper awareness; Dependabot is here for the
+  # Java-side libraries and as a safety net.
+  - package-ecosystem: "sbt"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Stockholm"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "sbt"
+    groups:
+      spring:
+        patterns:
+          - "org.springframework*"
+      cxf:
+        patterns:
+          - "org.apache.cxf*"
+      hibernate:
+        patterns:
+          - "org.hibernate*"
+      logging:
+        patterns:
+          - "org.slf4j:*"
+          - "ch.qos.logback:*"
+      jackson:
+        patterns:
+          - "com.fasterxml.jackson*"
+      activemq:
+        patterns:
+          - "org.apache.activemq:*"
+      test-frameworks:
+        patterns:
+          - "org.scalatest:*"
+          - "org.scalacheck:*"
+          - "org.scalatestplus:*"
+          - "junit:*"
+          - "com.github.sbt:junit-interface"
+    ignore:
+      # Scala-lang bumps are owned by Scala Steward, which understands LTS
+      # vs Next and binary-compat windows.
+      - dependency-name: "org.scala-lang:*"
+      - dependency-name: "org.scala-lang.modules:*"
+
+  # GitHub Actions workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "github-actions"
