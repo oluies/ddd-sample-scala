@@ -82,7 +82,7 @@ lazy val root = (project in file("."))
       // Commons
       "org.apache.commons" % "commons-lang3" % "3.17.0",
       "commons-io"         % "commons-io"    % "2.18.0",
-      "org.apache.commons" % "commons-dbcp2" % "2.13.0",
+      "org.apache.commons" % "commons-dbcp2" % "2.14.0",
 
       // In-memory DB for integration tests + sample data
       "org.hsqldb" % "hsqldb" % "2.7.4",
