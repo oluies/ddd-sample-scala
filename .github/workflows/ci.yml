@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [master, "task*/**"]
+    branches: [master, "task*/**", "rewrite/**"]
   pull_request:
     branches: [master]
   workflow_dispatch:
@@ -21,9 +21,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Java 17 is the baseline for Spring 5 / Hibernate 5 / CXF 3 on
-        # Scala 3. Add 21 once dependencies are confirmed-clean on it.
-        java: ["17"]
+        # Java 21 is the baseline for Spring Boot 3.3 / Jakarta EE / Hibernate 6.
+        java: ["21"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -57,6 +56,9 @@ jobs:
         run: sbt -v "compile; Test/compile"
 
       - name: Test
+        # Phase 0: empty source tree, no tests. Re-enable test stage once
+        # phase 2 (domain.shared) lands.
+        if: hashFiles('src/test/scala/**/*.scala') != ''
         run: sbt -v test
 
       - name: Check formatting
