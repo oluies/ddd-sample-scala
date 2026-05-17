@@ -80,7 +80,7 @@ lazy val root = (project in file("."))
       "ch.qos.logback" % "logback-classic" % LogbackVersion,
 
       // Commons
-      "org.apache.commons" % "commons-lang3" % "3.17.0",
+      "org.apache.commons" % "commons-lang3" % "3.20.0",
       "commons-io"         % "commons-io"    % "2.18.0",
       "org.apache.commons" % "commons-dbcp2" % "2.13.0",
 
