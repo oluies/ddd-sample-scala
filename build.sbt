@@ -33,7 +33,7 @@ val JacksonVersion      = "2.18.2"
 val ScalaTestVersion    = "3.2.19"
 val ScalaCheckVersion   = "1.19.0"
 val MockitoScalaVersion = "1.17.37"
-val ActiveMqVersion     = "5.18.7"
+val ActiveMqVersion     = "5.19.6"
 
 // Custom task key — must be declared before it's referenced in settings.
 lazy val bookingFacadeJar = taskKey[File](
