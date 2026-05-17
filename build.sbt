@@ -25,7 +25,7 @@ ThisBuild / scalacOptions ++= Seq(
 // Dependency versions — keep in one place so Scala Steward bumps land cleanly.
 // ---------------------------------------------------------------------------
 val SpringVersion       = "5.2.19.RELEASE"
-val CxfVersion          = "3.3.13"
+val CxfVersion          = "3.6.10"
 val HibernateVersion    = "5.4.24.Final"
 val Slf4jVersion        = "2.0.16"
 val LogbackVersion      = "1.5.32"
