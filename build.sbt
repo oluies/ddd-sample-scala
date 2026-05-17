@@ -25,8 +25,8 @@ ThisBuild / scalacOptions ++= Seq(
 // Dependency versions — keep in one place so Scala Steward bumps land cleanly.
 // ---------------------------------------------------------------------------
 val SpringVersion       = "5.2.25.RELEASE"
-val CxfVersion          = "3.3.13"
-val HibernateVersion    = "5.4.24.Final"
+val CxfVersion          = "3.6.10"
+val HibernateVersion    = "5.4.33"
 val Slf4jVersion        = "2.0.18"
 val LogbackVersion      = "1.5.32"
 val JacksonVersion      = "2.18.2"
@@ -81,7 +81,7 @@ lazy val root = (project in file("."))
 
       // Commons
       "org.apache.commons" % "commons-lang3" % "3.20.0",
-      "commons-io"         % "commons-io"    % "2.18.0",
+      "commons-io"         % "commons-io"    % "2.22.0",
       "org.apache.commons" % "commons-dbcp2" % "2.14.0",
 
       // In-memory DB for integration tests + sample data
