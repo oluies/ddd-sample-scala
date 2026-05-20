@@ -35,14 +35,16 @@ final class HandlingEventServiceImpl(
       eventType: HandlingEventType
   ): Unit =
     val registrationTime = Instant.now()
-    val event = handlingEventFactory.createHandlingEvent(
+    handlingEventFactory.createHandlingEvent(
       registrationTime,
       completionTime,
       trackingId,
       voyageNumber,
       unLocode,
       eventType
-    )
-    handlingEventRepository.store(event)
-    applicationEvents.cargoWasHandled(event)
-    logger.info("Registered handling event: {}", event)
+    ) match
+      case Left(err) => throw err
+      case Right(event) =>
+        handlingEventRepository.store(event)
+        applicationEvents.cargoWasHandled(event)
+        logger.info("Registered handling event: {}", event)
