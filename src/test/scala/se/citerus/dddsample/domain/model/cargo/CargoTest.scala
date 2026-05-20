@@ -38,46 +38,48 @@ class CargoTest extends AnyFunSuite with Matchers:
   )
 
   test("origin is fixed at the initial route spec's origin and survives respecify") {
-    val cargo = new Cargo(TrackingId("ABC"), RouteSpecification(SHA, GOT, deadline))
+    val cargo = Cargo(TrackingId("ABC"), RouteSpecification(SHA, GOT, deadline))
     cargo.origin shouldEqual SHA
-    cargo.specifyNewRoute(RouteSpecification(RTM, GOT, deadline))
-    cargo.origin shouldEqual SHA
+    val rerouted = cargo.specifyNewRoute(RouteSpecification(RTM, GOT, deadline))
+    rerouted.origin shouldEqual SHA
   }
 
   test("freshly created cargo is NOT_ROUTED with NOT_RECEIVED transport status") {
-    val cargo = new Cargo(TrackingId("ABC"), RouteSpecification(SHA, GOT, deadline))
+    val cargo = Cargo(TrackingId("ABC"), RouteSpecification(SHA, GOT, deadline))
     cargo.delivery.routingStatus shouldEqual RoutingStatus.NOT_ROUTED
     cargo.delivery.transportStatus shouldEqual TransportStatus.NOT_RECEIVED
   }
 
-  test("assignToRoute updates delivery synchronously and yields ROUTED status") {
-    val cargo = new Cargo(TrackingId("ABC"), RouteSpecification(SHA, GOT, deadline))
-    cargo.assignToRoute(itinerary(Instant.ofEpochMilli(40)))
-    cargo.delivery.routingStatus shouldEqual RoutingStatus.ROUTED
+  test("assignToRoute returns a new Cargo with delivery recomputed to ROUTED") {
+    val cargo  = Cargo(TrackingId("ABC"), RouteSpecification(SHA, GOT, deadline))
+    val routed = cargo.assignToRoute(itinerary(Instant.ofEpochMilli(40)))
+    routed.delivery.routingStatus shouldEqual RoutingStatus.ROUTED
+    // Original is unchanged — confirms immutability.
+    cargo.delivery.routingStatus shouldEqual RoutingStatus.NOT_ROUTED
   }
 
   test("identity equality is by tracking id") {
     val spec = RouteSpecification(SHA, GOT, deadline)
-    val a    = new Cargo(TrackingId("ABC"), spec)
-    val b    = new Cargo(TrackingId("ABC"), spec)
-    val c    = new Cargo(TrackingId("DEF"), spec)
+    val a    = Cargo(TrackingId("ABC"), spec)
+    val b    = Cargo(TrackingId("ABC"), spec)
+    val c    = Cargo(TrackingId("DEF"), spec)
     a shouldEqual b
     a.sameIdentityAs(b) shouldBe true
     (a == c) shouldBe false
   }
 
   test("deriveDeliveryProgress with a LOAD event reports ONBOARD_CARRIER") {
-    val cargo = new Cargo(TrackingId("ABC"), RouteSpecification(SHA, GOT, deadline))
-    cargo.assignToRoute(itinerary(Instant.ofEpochMilli(40)))
+    val routed = Cargo(TrackingId("ABC"), RouteSpecification(SHA, GOT, deadline))
+      .assignToRoute(itinerary(Instant.ofEpochMilli(40)))
     val loaded = HandlingEvent(
-      cargo,
+      routed,
       Instant.ofEpochMilli(15),
       Instant.ofEpochMilli(15),
       HandlingEventType.LOAD,
       SHA,
       voyage
     )
-    cargo.deriveDeliveryProgress(HandlingHistory(List(loaded)))
-    cargo.delivery.transportStatus shouldEqual TransportStatus.ONBOARD_CARRIER
-    cargo.delivery.currentVoyage shouldEqual voyage
+    val updated = routed.deriveDeliveryProgress(HandlingHistory(List(loaded)))
+    updated.delivery.transportStatus shouldEqual TransportStatus.ONBOARD_CARRIER
+    updated.delivery.currentVoyage shouldEqual voyage
   }

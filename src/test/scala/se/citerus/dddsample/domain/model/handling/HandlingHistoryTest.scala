@@ -18,7 +18,7 @@ class HandlingHistoryTest extends AnyFunSuite with Matchers:
     VoyageNumber("V1"),
     Schedule(List(CarrierMovement(SHA, DAL, Instant.ofEpochMilli(1), Instant.ofEpochMilli(2))))
   )
-  private val cargo = new Cargo(
+  private val cargo = Cargo(
     TrackingId("ABC"),
     RouteSpecification(SHA, GOT, Instant.parse("2026-12-01T00:00:00Z"))
   )

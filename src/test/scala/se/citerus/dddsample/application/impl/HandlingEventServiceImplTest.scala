@@ -42,7 +42,7 @@ class HandlingEventServiceImplTest extends AnyFunSuite with Matchers:
     )
   )
 
-  private val cargo = new Cargo(
+  private val cargo = Cargo(
     TrackingId("ABC"),
     RouteSpecification(HAMBURG, TOKYO, Instant.parse("2026-12-01T00:00:00Z"))
   )

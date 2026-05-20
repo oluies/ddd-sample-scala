@@ -37,4 +37,4 @@ final class CargoFactory(
         )
       )
     val spec = RouteSpecification(origin, destination, arrivalDeadline)
-    new Cargo(trackingId, spec)
+    Cargo(trackingId, spec)

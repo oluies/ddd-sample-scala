@@ -27,7 +27,7 @@ final class CargoInspectionServiceImpl(
         logger.warn("Can't inspect non-existing cargo {}", trackingId.idString)
       case Some(cargo) =>
         val handlingHistory = handlingEventRepository.lookupHandlingHistoryOfCargo(trackingId)
-        cargo.deriveDeliveryProgress(handlingHistory)
-        if cargo.delivery.isMisdirected then applicationEvents.cargoWasMisdirected(cargo)
-        if cargo.delivery.isUnloadedAtDestination then applicationEvents.cargoHasArrived(cargo)
-        cargoRepository.store(cargo)
+        val updated         = cargo.deriveDeliveryProgress(handlingHistory)
+        if updated.delivery.isMisdirected then applicationEvents.cargoWasMisdirected(updated)
+        if updated.delivery.isUnloadedAtDestination then applicationEvents.cargoHasArrived(updated)
+        cargoRepository.store(updated)

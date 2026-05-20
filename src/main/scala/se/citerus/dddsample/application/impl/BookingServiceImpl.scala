@@ -51,8 +51,7 @@ final class BookingServiceImpl(
         s"Can't assign itinerary to non-existing cargo $trackingId"
       )
     }
-    cargo.assignToRoute(itinerary)
-    cargoRepository.store(cargo)
+    cargoRepository.store(cargo.assignToRoute(itinerary))
     logger.info("Assigned cargo {} to new route", trackingId.idString)
 
   @Transactional
@@ -65,6 +64,5 @@ final class BookingServiceImpl(
     }
     val newSpec =
       RouteSpecification(cargo.origin, newDestination, cargo.routeSpecification.arrivalDeadline)
-    cargo.specifyNewRoute(newSpec)
-    cargoRepository.store(cargo)
+    cargoRepository.store(cargo.specifyNewRoute(newSpec))
     logger.info("Changed destination for cargo {} to {}", trackingId.idString, newSpec.destination)

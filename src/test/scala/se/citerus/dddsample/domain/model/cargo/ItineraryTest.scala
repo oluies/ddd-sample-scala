@@ -36,7 +36,7 @@ class ItineraryTest extends AnyFunSuite with Matchers:
 
   private val routeSpec =
     RouteSpecification(SHANGHAI, GOTHENBURG, Instant.ofEpochMilli(Long.MaxValue / 2))
-  private val cargo = new Cargo(TrackingId("CARGO1"), routeSpec)
+  private val cargo = Cargo(TrackingId("CARGO1"), routeSpec)
 
   private val itinerary = Itinerary(
     List(
