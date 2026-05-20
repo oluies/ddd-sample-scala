@@ -1,5 +1,14 @@
 # ddd-sample-scala
 
+[![CI](https://github.com/oluies/ddd-sample-scala/actions/workflows/ci.yml/badge.svg?branch=rewrite/from-java-master)](https://github.com/oluies/ddd-sample-scala/actions/workflows/ci.yml)
+[![Scala](https://img.shields.io/badge/scala-3.3.4_LTS-DC322F?logo=scala&logoColor=white)](https://www.scala-lang.org/)
+[![Java](https://img.shields.io/badge/java-21-007396?logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/21/)
+[![Spring Boot](https://img.shields.io/badge/spring%20boot-3.3.10-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![sbt](https://img.shields.io/badge/sbt-1.10-CA4D2D?logo=scala&logoColor=white)](https://www.scala-sbt.org/)
+[![Tests](https://img.shields.io/badge/tests-73%20passing-brightgreen)](#status)
+[![Scala Steward badge](https://img.shields.io/badge/Scala_Steward-helping-blue?logo=scala&logoColor=white)](https://github.com/scala-steward-org/scala-steward)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](license.txt)
+
 A Scala port of the [Citerus DDD Sample](https://github.com/citerus/dddsample-core)
 — Eric Evans' canonical cargo-shipping example used to teach Domain-Driven
 Design tactical patterns: entities, value objects, aggregates, repositories,
