@@ -2,6 +2,8 @@ package se.citerus.dddsample.interfaces.booking.facade.internal
 
 import java.time.Instant
 
+import org.springframework.stereotype.Service
+
 import se.citerus.dddsample.application.BookingService
 import se.citerus.dddsample.domain.model.cargo.{CargoRepository, TrackingId}
 import se.citerus.dddsample.domain.model.location.{LocationRepository, UnLocode}
@@ -18,6 +20,7 @@ import se.citerus.dddsample.interfaces.booking.facade.internal.assembler.{
   LocationDTOAssembler
 }
 
+@Service
 final class BookingServiceFacadeImpl(
     bookingService: BookingService,
     locationRepository: LocationRepository,

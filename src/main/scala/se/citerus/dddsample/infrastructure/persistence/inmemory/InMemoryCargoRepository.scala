@@ -5,6 +5,8 @@ import java.util.concurrent.ConcurrentHashMap
 
 import scala.jdk.CollectionConverters.*
 
+import org.springframework.stereotype.Repository
+
 import se.citerus.dddsample.domain.model.cargo.{Cargo, CargoRepository, TrackingId}
 
 /**
@@ -15,6 +17,7 @@ import se.citerus.dddsample.domain.model.cargo.{Cargo, CargoRepository, Tracking
  * Tracking ids are minted from UUID strings; this matches the upstream
  * Hibernate adapter's behaviour close enough for the teaching example.
  */
+@Repository
 final class InMemoryCargoRepository extends CargoRepository:
 
   private val cargos = new ConcurrentHashMap[String, Cargo]()

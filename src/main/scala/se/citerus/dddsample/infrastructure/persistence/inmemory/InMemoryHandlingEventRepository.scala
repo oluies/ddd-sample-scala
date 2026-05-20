@@ -4,6 +4,8 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 import scala.jdk.CollectionConverters.*
 
+import org.springframework.stereotype.Repository
+
 import se.citerus.dddsample.domain.model.cargo.TrackingId
 import se.citerus.dddsample.domain.model.handling.{
   HandlingEvent,
@@ -15,6 +17,7 @@ import se.citerus.dddsample.domain.model.handling.{
  * In-memory [[HandlingEventRepository]]. Stores events in an append-only
  * list (events are immutable value-like aggregates and are never updated).
  */
+@Repository
 final class InMemoryHandlingEventRepository extends HandlingEventRepository:
 
   private val events = new CopyOnWriteArrayList[HandlingEvent]()

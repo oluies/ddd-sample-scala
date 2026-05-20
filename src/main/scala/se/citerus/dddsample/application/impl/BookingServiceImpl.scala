@@ -3,6 +3,7 @@ package se.citerus.dddsample.application.impl
 import java.time.Instant
 
 import org.slf4j.LoggerFactory
+import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 import se.citerus.dddsample.application.BookingService
@@ -16,6 +17,7 @@ import se.citerus.dddsample.domain.model.cargo.{
 import se.citerus.dddsample.domain.model.location.{LocationRepository, UnLocode}
 import se.citerus.dddsample.domain.service.RoutingService
 
+@Service
 final class BookingServiceImpl(
     cargoRepository: CargoRepository,
     locationRepository: LocationRepository,

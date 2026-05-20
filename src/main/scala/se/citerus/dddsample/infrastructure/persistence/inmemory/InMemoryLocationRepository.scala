@@ -4,9 +4,12 @@ import java.util.concurrent.ConcurrentHashMap
 
 import scala.jdk.CollectionConverters.*
 
+import org.springframework.stereotype.Repository
+
 import se.citerus.dddsample.domain.model.location.{Location, LocationRepository, UnLocode}
 
 /** In-memory [[LocationRepository]] keyed by UN/LOCODE. */
+@Repository
 final class InMemoryLocationRepository extends LocationRepository:
 
   private val locations = new ConcurrentHashMap[String, Location]()

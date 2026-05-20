@@ -3,12 +3,14 @@ package se.citerus.dddsample.application.impl
 import java.util.Objects
 
 import org.slf4j.LoggerFactory
+import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 import se.citerus.dddsample.application.{ApplicationEvents, CargoInspectionService}
 import se.citerus.dddsample.domain.model.cargo.{CargoRepository, TrackingId}
 import se.citerus.dddsample.domain.model.handling.HandlingEventRepository
 
+@Service
 final class CargoInspectionServiceImpl(
     applicationEvents: ApplicationEvents,
     cargoRepository: CargoRepository,
