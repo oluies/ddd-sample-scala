@@ -3,10 +3,9 @@ package se.citerus.dddsample.infrastructure.routing
 import java.time.Instant
 import java.util.Properties
 
+import com.pathfinder.api.{GraphTraversalService, TransitEdge, TransitPath}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-
-import com.pathfinder.api.{GraphTraversalService, TransitEdge, TransitPath}
 
 import se.citerus.dddsample.domain.model.cargo.RouteSpecification
 import se.citerus.dddsample.infrastructure.persistence.inmemory.{
@@ -35,11 +34,15 @@ class ExternalRoutingServiceTest extends AnyFunSuite with Matchers:
       (_: String, _: String, _: Properties) => List(TransitPath(List(edge)))
 
     val routing = new ExternalRoutingService(stubGraph, locationRepo, voyageRepo)
-    val spec    = RouteSpecification(SampleLocations.HONGKONG, SampleLocations.NEWYORK, Instant.parse("2008-11-01T00:00:00Z"))
+    val spec = RouteSpecification(
+      SampleLocations.HONGKONG,
+      SampleLocations.NEWYORK,
+      Instant.parse("2008-11-01T00:00:00Z")
+    )
 
     val itineraries = routing.fetchRoutesForSpecification(spec)
     itineraries should have size 1
     itineraries.head.legs should have size 1
-    itineraries.head.legs.head.loadLocation   shouldEqual SampleLocations.HONGKONG
+    itineraries.head.legs.head.loadLocation shouldEqual SampleLocations.HONGKONG
     itineraries.head.legs.head.unloadLocation shouldEqual SampleLocations.NEWYORK
   }

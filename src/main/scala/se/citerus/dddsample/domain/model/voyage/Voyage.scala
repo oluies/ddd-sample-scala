@@ -2,16 +2,18 @@ package se.citerus.dddsample.domain.model.voyage
 
 import java.time.Instant
 import java.util.Objects
+
 import scala.collection.mutable
 
 import se.citerus.dddsample.domain.model.location.Location
 import se.citerus.dddsample.domain.shared.DomainEntity
 
-/** A Voyage aggregate.
-  *
-  * Pure domain entity — no JPA annotations. Identity is by [[VoyageNumber]];
-  * equality delegates to [[sameIdentityAs]].
-  */
+/**
+ * A Voyage aggregate.
+ *
+ * Pure domain entity — no JPA annotations. Identity is by [[VoyageNumber]];
+ * equality delegates to [[sameIdentityAs]].
+ */
 final class Voyage(val voyageNumber: VoyageNumber, val schedule: Schedule)
     extends DomainEntity[Voyage]:
   Objects.requireNonNull(voyageNumber, "Voyage number is required")
@@ -33,9 +35,10 @@ object Voyage:
   /** Null object pattern. */
   val NONE: Voyage = new Voyage(VoyageNumber(""), Schedule.EMPTY)
 
-  /** Builder for incremental construction of a [[Voyage]] aggregate. Serves as
-    * the aggregate factory.
-    */
+  /**
+   * Builder for incremental construction of a [[Voyage]] aggregate. Serves as
+   * the aggregate factory.
+   */
   final class Builder(voyageNumber: VoyageNumber, initialDepartureLocation: Location):
     Objects.requireNonNull(voyageNumber, "Voyage number is required")
     Objects.requireNonNull(initialDepartureLocation, "Departure location is required")

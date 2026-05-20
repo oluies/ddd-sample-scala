@@ -1,8 +1,9 @@
 package se.citerus.dddsample.domain.shared
 
-/** Abstract base implementation of composite [[Specification]] with default
-  * implementations for `and`, `or` and `not`.
-  */
+/**
+ * Abstract base implementation of composite [[Specification]] with default
+ * implementations for `and`, `or` and `not`.
+ */
 abstract class AbstractSpecification[T] extends Specification[T]:
 
   def isSatisfiedBy(t: T): Boolean

@@ -3,10 +3,11 @@ package se.citerus.dddsample.domain.shared
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-/** Combined translation of upstream `AndSpecificationTest`,
-  * `OrSpecificationTest`, and `NotSpecificationTest` (and the
-  * `AlwaysTrueSpec` / `AlwaysFalseSpec` fixtures).
-  */
+/**
+ * Combined translation of upstream `AndSpecificationTest`,
+ * `OrSpecificationTest`, and `NotSpecificationTest` (and the
+ * `AlwaysTrueSpec` / `AlwaysFalseSpec` fixtures).
+ */
 class SpecificationTest extends AnyFunSuite with Matchers:
 
   // Fixtures matching upstream AlwaysTrueSpec / AlwaysFalseSpec.

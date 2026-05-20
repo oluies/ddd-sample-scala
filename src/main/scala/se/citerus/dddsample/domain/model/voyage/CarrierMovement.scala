@@ -6,12 +6,13 @@ import java.util.Objects
 import se.citerus.dddsample.domain.model.location.Location
 import se.citerus.dddsample.domain.shared.ValueObject
 
-/** A carrier movement is a vessel voyage from one location to another.
-  *
-  * Pure domain value object — no JPA annotations. `case class` gives us
-  * structural equality and `hashCode` for free; `require` enforces the
-  * upstream Java `Validate.noNullElements` invariant.
-  */
+/**
+ * A carrier movement is a vessel voyage from one location to another.
+ *
+ * Pure domain value object — no JPA annotations. `case class` gives us
+ * structural equality and `hashCode` for free; `require` enforces the
+ * upstream Java `Validate.noNullElements` invariant.
+ */
 final case class CarrierMovement(
     departureLocation: Location,
     arrivalLocation: Location,

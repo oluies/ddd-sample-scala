@@ -9,15 +9,16 @@ import scala.util.Random
 
 import com.pathfinder.api.{GraphTraversalService, TransitEdge, TransitPath}
 
-/** In-process implementation of the routing graph traversal. Mirrors the
-  * upstream Java reference: returns a small random set of plausible paths
-  * by walking a shuffled subset of all known nodes between the origin and
-  * destination. Each leg's date is offset from the previous one by ~1 day
-  * with a ±500-minute jitter.
-  *
-  * This is *not* a real shortest-path algorithm — it's a fixture for the
-  * teaching example.
-  */
+/**
+ * In-process implementation of the routing graph traversal. Mirrors the
+ * upstream Java reference: returns a small random set of plausible paths
+ * by walking a shuffled subset of all known nodes between the origin and
+ * destination. Each leg's date is offset from the previous one by ~1 day
+ * with a ±500-minute jitter.
+ *
+ * This is *not* a real shortest-path algorithm — it's a fixture for the
+ * teaching example.
+ */
 final class GraphTraversalServiceImpl(dao: GraphDAO) extends GraphTraversalService:
 
   private val random = new Random()
@@ -31,8 +32,10 @@ final class GraphTraversalServiceImpl(dao: GraphDAO) extends GraphTraversalServi
     val candidates     = mutable.ListBuffer.empty[TransitPath]
 
     for _ <- 0 until candidateCount do
-      val intermediates = randomChunk(dao.listAllNodes().filterNot(n => n == originNode || n == destinationNode))
-      val edges         = mutable.ListBuffer.empty[TransitEdge]
+      val intermediates = randomChunk(
+        dao.listAllNodes().filterNot(n => n == originNode || n == destinationNode)
+      )
+      val edges = mutable.ListBuffer.empty[TransitEdge]
 
       var fromNode = originNode
       var date     = Instant.now()
@@ -40,9 +43,15 @@ final class GraphTraversalServiceImpl(dao: GraphDAO) extends GraphTraversalServi
       for toNode <- nodes do
         val fromDate = nextDate(date)
         val toDate   = nextDate(fromDate)
-        edges += TransitEdge(dao.getTransitEdge(fromNode, toNode), fromNode, toNode, fromDate, toDate)
+        edges += TransitEdge(
+          dao.getTransitEdge(fromNode, toNode),
+          fromNode,
+          toNode,
+          fromDate,
+          toDate
+        )
         fromNode = toNode
-        date     = nextDate(toDate)
+        date = nextDate(toDate)
 
       candidates += TransitPath(edges.toList)
 

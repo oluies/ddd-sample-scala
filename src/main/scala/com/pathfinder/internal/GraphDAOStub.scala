@@ -9,8 +9,19 @@ final class GraphDAOStub extends GraphDAO:
 
   override def listAllNodes(): List[String] =
     List(
-      "CNHKG", "AUMEL", "SESTO", "FIHEL", "USCHI", "JNTKO", "DEHAM",
-      "CNSHA", "NLRTM", "SEGOT", "CNHGH", "USNYC", "USDAL"
+      "CNHKG",
+      "AUMEL",
+      "SESTO",
+      "FIHEL",
+      "USCHI",
+      "JNTKO",
+      "DEHAM",
+      "CNSHA",
+      "NLRTM",
+      "SEGOT",
+      "CNHGH",
+      "USNYC",
+      "USDAL"
     )
 
   override def getTransitEdge(from: String, to: String): String =

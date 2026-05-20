@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 import se.citerus.dddsample.domain.model.location.{Location, UnLocode}
-import se.citerus.dddsample.domain.model.voyage.{Schedule, CarrierMovement, Voyage, VoyageNumber}
+import se.citerus.dddsample.domain.model.voyage.{CarrierMovement, Schedule, Voyage, VoyageNumber}
 
 class LegTest extends AnyFunSuite with Matchers:
 

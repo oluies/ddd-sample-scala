@@ -4,14 +4,15 @@ import java.util.Objects
 
 import se.citerus.dddsample.domain.shared.DomainEntity
 
-/** A location in our model is a stop on a journey, such as a cargo origin or
-  * destination, or carrier-movement endpoints. Uniquely identified by a UN
-  * Locode.
-  *
-  * Pure domain class: no JPA / Hibernate annotations. The JPA persistence
-  * model lives in `infrastructure.persistence.jpa` (phase 9) and converts to
-  * / from this type via a mapper.
-  */
+/**
+ * A location in our model is a stop on a journey, such as a cargo origin or
+ * destination, or carrier-movement endpoints. Uniquely identified by a UN
+ * Locode.
+ *
+ * Pure domain class: no JPA / Hibernate annotations. The JPA persistence
+ * model lives in `infrastructure.persistence.jpa` (phase 9) and converts to
+ * / from this type via a mapper.
+ */
 final class Location private (val unLocode: UnLocode, val name: String)
     extends DomainEntity[Location]:
 

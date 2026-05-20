@@ -5,35 +5,72 @@ A Scala port of the [Citerus DDD Sample](https://github.com/citerus/dddsample-co
 Design tactical patterns: entities, value objects, aggregates, repositories,
 domain services, domain events, and specifications.
 
+This is a **teaching artifact**, not a production system. Optimize for
+clarity over cleverness.
+
 ## Status
 
-Migrated from **Scala 2.8** to **Scala 3.3.4 LTS** on `task007/scala3-15d0bf`.
-The build is on **sbt 1.10** / **Java 17**. `sbt compile`, `sbt Test/compile`,
-and `sbt test` are all green.
+The `rewrite/from-java-master` branch is a clean rewrite from the Java
+upstream's current `Spring Boot 3.3 / Jakarta EE / Hibernate 6` baseline,
+targeting **Scala 3.3.4 LTS** on **Java 21** and **sbt 1.10**. All 17 phases
+of the rewrite plan are complete; `sbt test` is green (73 tests).
 
-| Component        | Version              | Notes                                       |
-| ---------------- | -------------------- | ------------------------------------------- |
-| Scala            | 3.3.4 LTS            | dialect: `-source:3.3`                      |
-| Build            | sbt 1.10             | Maven was removed mid-migration             |
-| Java             | 17                   | required by Spring 5.2 / Hibernate 5.4 deps |
-| Test framework   | ScalaTest 3.2.19     | + scalatestplus-mockito                     |
-| Mocking          | mockito-scala 1.17   | EasyMock removed                            |
-| Spring           | 5.2.19               | `javax.*` era — Spring 6 is a follow-up     |
-| Hibernate        | 5.4.24               | XML mappings preserved                      |
-| CXF (JAX-WS)     | 3.3.8                | for the booking facade                      |
+| Component        | Version              | Notes                                     |
+| ---------------- | -------------------- | ----------------------------------------- |
+| Scala            | 3.3.4 LTS            | dialect: `-source:3.3`                    |
+| Java             | 21                   | `--release 21` baseline                   |
+| Build            | sbt 1.10             |                                           |
+| Spring Boot      | 3.3.10               | starter-web, starter-data-jpa, activemq, actuator, validation, thymeleaf |
+| Jakarta EE       | 10                   | via Spring Boot 3.3 BOM                   |
+| Hibernate        | 6.x                  | transitive via `spring-boot-starter-data-jpa` |
+| ActiveMQ Classic | 6.1.5                | Jakarta variant                           |
+| Test framework   | ScalaTest 3.2.20     | + `scalatestplus-mockito-5-12`            |
+| Property tests   | ScalaCheck 1.19.0    |                                           |
 
-See [`.claude/plans/scala3-upgrade.md`](.claude/plans/scala3-upgrade.md) for
-the full plan and [Migration notes](#migration-notes-2026-05) below for what
-was actually done.
+## Design decisions (rewrite branch)
+
+| ID  | Decision                                              | Rationale                                          |
+| --- | ----------------------------------------------------- | -------------------------------------------------- |
+| D1  | Separate persistence model — domain stays JPA-annotation-free | Keeps the DDD lesson visible; JPA adapters land in `infrastructure.persistence.jpa` (follow-up phase 9b) |
+| D2  | Opaque types for ids (`TrackingId`, `UnLocode`, `VoyageNumber`) | Zero-cost wrappers that disappear at runtime but stay distinct at compile time |
+| D3  | Plain `require` for argument validation; `Objects.requireNonNull` for opaque-type null checks | `require` rejects empty/invalid; opaque types need the Java helper because Scala 3 forbids comparing them with `null` |
+| D4  | ScalaTest 3.2 `AnyFunSuite with Matchers` + Mockito + ScalaCheck | Same idioms used across `domain.*` and `application.*` test suites |
+| D5  | Spring Web MVC + Jackson (REST + JSON), no JSP        | `CargoAdminController` and `HandlingReportServiceImpl` are clean `@RestController`s |
+
+See [`.claude/plans/rewrite-from-java.md`](.claude/plans/rewrite-from-java.md)
+for the full 17-phase plan; commit history on this branch is one tagged
+commit per phase.
 
 ## Layout
 
 ```
 src/main/scala/se/citerus/dddsample/
-  domain/{model,service,shared}/        ← framework-free DDD core
-  application/                          ← use-case orchestration
-  infrastructure/{persistence,routing}/ ← Hibernate, external services
-  interfaces/{booking,handling,tracking}/  ← Spring MVC + CXF facades
+  domain/
+    model/{cargo,handling,location,voyage}/   ← aggregates (framework-free)
+    service/                                  ← RoutingService trait
+    shared/                                   ← Entity, ValueObject, Specification
+  application/                                ← BookingService, HandlingEventService,
+                                                CargoInspectionService, ApplicationEvents
+  application/impl/                           ← @Transactional Spring impls
+  application/util/DateUtils                  ← test-friendly Instant parsers
+  infrastructure/
+    persistence/inmemory/                     ← in-memory repository impls (phase 9a)
+    routing/ExternalRoutingService             ← adapter calling the pathfinder API
+    sampledata/                                ← SampleLocations, SampleVoyages
+    messaging/jms/                             ← ActiveMQ ApplicationEvents impl + consumers
+  interfaces/
+    booking/facade/                            ← BookingServiceFacade + DTOs + assemblers
+    booking/web/CargoAdminController           ← REST /admin endpoints
+    tracking/ws/                               ← REST /api/track/{id} + DTO converter
+    handling/{ws,HandlingReportParser,...}     ← REST /handlingReport
+
+src/main/scala/com/pathfinder/
+  api/{GraphTraversalService, TransitEdge, TransitPath}    ← routing-team's API
+  internal/{GraphDAO, GraphDAOStub, GraphTraversalServiceImpl}  ← in-process impl
+
+src/test/scala/se/citerus/dddsample/
+  domain/, application/, infrastructure/      ← unit + property tests
+  scenario/CargoLifecycleScenarioTest          ← end-to-end book-route-handle scenario
 ```
 
 The DDD invariant: `domain.*` never imports from `infrastructure.*` or
@@ -43,20 +80,15 @@ The DDD invariant: `domain.*` never imports from `infrastructure.*` or
 
 ```bash
 sbt compile                       # compile main sources
-sbt test                          # run all tests against in-memory HSQLDB
+sbt test                          # run all tests (73 currently)
 sbt "testOnly *CargoTest"         # run a single suite
 sbt scalafmtAll                   # format the codebase
 sbt scalafmtCheckAll              # CI-style format check
-
-# Web app (xsbt-web-plugin)
-sbt "Jetty/start"                 # serve UI on :8080
-sbt "Jetty/stop"
-sbt package                       # build the WAR
-sbt bookingFacadeJar              # secondary jar for the JAX-WS facade
+sbt run                           # boot Spring Boot on :8080
 ```
 
-Requires JDK 17 and sbt 1.10+ on the PATH. Install sbt with
-`brew install sbt` or via [Coursier](https://get-coursier.io/).
+Requires JDK 21 and sbt 1.10+ on the PATH. Install sbt with `brew install sbt`
+or via [Coursier](https://get-coursier.io/).
 
 ## Dependency management
 
@@ -72,13 +104,34 @@ Requires JDK 17 and sbt 1.10+ on the PATH. Install sbt with
 
 Project-local skills live under `.claude/skills/`:
 
-- **`scala3-migration`** — invoke when editing Scala sources during the
-  Scala 2 → 3 migration.
 - **`scala-ddd-tactical`** — invoke when adding to or refactoring the
   domain model.
 - **`scala-testing`** — invoke when writing or porting tests.
+- **`scala3-migration`** — leftover from the patch-forward migration on
+  master; still useful for general Scala 3 idioms.
 
 `CLAUDE.md` at the repo root has the short briefing for the assistant.
+
+## What's NOT done (follow-up work)
+
+- **Phase 9b — JPA persistence adapters.** The "separate persistence model"
+  decision (D1) requires a JPA-annotated mirror class + mapper + Spring Data
+  interface + adapter for each of the four aggregates. The in-memory repos
+  from phase 9a are sufficient for tests and a lightweight demo, but JPA
+  has not been wired up. The Spring Boot autoconfig excludes for JPA / JMS
+  in `application.properties` need to be removed once the adapters land.
+- **`SampleDataGenerator`.** Upstream's bootstrap loader (creating the
+  `ABC123` and `JKL567` reference cargos with handling histories) is not
+  yet ported. The named voyages and locations are wired up in
+  `SampleLocations` / `SampleVoyages`; what's missing is the
+  `@PostConstruct` `loadHibernateData` orchestration.
+- **Messages bundle.** `CargoTrackingDTOConverter` resolves locale-aware
+  status/description text via Spring `MessageSource`; the
+  `messages*.properties` resource bundles need to land before the tracking
+  endpoint returns useful strings.
+- **`HandlingReportParser` / file scanner.** Upstream's filesystem-watch
+  variant (`UploadDirectoryScanner` reading CSV from a watched directory)
+  is not ported — only the REST `POST /handlingReport` path is.
 
 ## Reference
 
@@ -87,66 +140,14 @@ Project-local skills live under `.claude/skills/`:
 - [Citerus DDD Sample (Java)](https://github.com/citerus/dddsample-core).
 - [Scala 3 migration guide](https://docs.scala-lang.org/scala3/guides/migration/compatibility-intro.html).
 
-## Migration notes (2026-05)
-
-The Scala 2.8 → 3.3 migration was done in 13 batches by package. Highlights
-of what changed beyond mechanical syntax:
-
-**Build**
-- `pom.xml` deleted; `build.sbt` is the source of truth.
-- xsbt-web-plugin 4.2.4 replaces the Maven WAR + Jetty plugin.
-- Legacy `lib/scalatest-1.2-for-scala-2.8.0.RC3-SNAPSHOT.jar` removed (was an
-  unmanaged dep that conflicted with ScalaTest 3.2.19).
-- Spring's old monolithic `org.springframework:spring` artifact was split
-  into `spring-core`, `spring-context`, `spring-beans`, `spring-aop`,
-  `spring-tx`, `spring-orm`, `spring-jdbc`, `spring-jms`, `spring-web`,
-  `spring-webmvc`.
-- Strict scalac options (`-Wunused:imports`, `-Wvalue-discard`,
-  `-Xfatal-warnings`) are temporarily disabled in `build.sbt`. A cleanup
-  PR should re-enable them and remove the now-unused imports.
-
-**Domain model — real Scala 3 changes (not just syntax)**
-- `CarrierMovement` and `Leg` had constructor params that shadowed
-  same-named methods (allowed in Scala 2, error in Scala 3). Params
-  renamed to `_departureTime` / `_arrivalTime` / `_loadTime` /
-  `_unloadTime` and made `private val`.
-- `Itinerary.END_OF_DAYS` used the non-existent `Math.MAX_LONG` (latent
-  bug masked by the old build) → fixed to `Long.MaxValue`.
-- `HandlingHistory` used `List.sort(predicate)` (gone in Scala 2.13+) →
-  `sortWith`.
-- `Delivery` reduced its non-local `return` count; a few remain inside
-  `for`/`while` loops and emit deprecation warnings (Scala 3 wants
-  `boundary` / `boundary.break`). Behavior is unchanged.
-
-**Library renames**
-- `org.apache.commons.lang.*` → `org.apache.commons.lang3.*` (38 sites).
-- `scala.reflect.BeanProperty` → `scala.beans.BeanProperty`.
-- `scala.collection.JavaConversions` → `scala.jdk.CollectionConverters`.
-- `org.hibernate.classic.Session` → `org.hibernate.Session`.
-
-**Stubbed-out (need follow-up rewrite)**
-- `interfaces.tracking.CargoTrackingController` extended Spring 2.x's
-  removed `SimpleFormController` — class kept on the classpath as a stub
-  with a TODO; request-handling logic needs to be ported to Spring 5
-  `@Controller` / `@GetMapping`.
-- `infrastructure.persistence.hibernate.AbstractRepositoryTest` and
-  `CargoRepositoryTest` extended Spring 2.x's removed
-  `AbstractTransactionalDataSourceSpringContextTests`. Stubbed with the
-  original assertions preserved as TODO comments. Needs port to Spring 5
-  TestContext (`SpringExtension` / `@SpringJUnitConfig`).
-
-**Test rewrite**
-- 3 unit tests (`BookingServiceTest`, `HandlingEventServiceTest`,
-  `RouteSpecificationTest`) ported from JUnit 3 + EasyMock + ScalaTest 1.2
-  to ScalaTest 3.2 `AnyFunSuite` + Mockito. **All 6 tests pass.**
-
-**What's NOT done** (deliberately, in scope for follow-up PRs)
-- Spring 5 → 6 (Jakarta EE).
-- Hibernate 5 → 6.
-- Java 21 baseline.
-- Filling in `CargoTrackingController` and the integration tests.
-- Re-enabling strict scalac flags + cleaning up unused imports.
-
 ## License
 
 See [`license.txt`](license.txt) — original Citerus license preserved.
+
+## See also
+
+- `master` branch — the Scala 2.8 → 3.3 patch-forward migration of the
+  pre-Spring-Boot Java codebase. Different starting point, same destination
+  language version.
+- [`.claude/plans/rewrite-from-java.md`](.claude/plans/rewrite-from-java.md) —
+  the 17-phase rewrite plan and design decisions.

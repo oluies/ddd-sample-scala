@@ -6,26 +6,27 @@ import se.citerus.dddsample.domain.model.handling.HandlingHistory
 import se.citerus.dddsample.domain.model.location.Location
 import se.citerus.dddsample.domain.shared.DomainEntity
 
-/** The Cargo aggregate root. Identifies a particular cargo by [[TrackingId]]
-  * and ties together its [[RouteSpecification]], [[Itinerary]], and
-  * [[Delivery]] snapshot.
-  *
-  * Behaviour mirrors the upstream Java aggregate:
-  *
-  *   - `specifyNewRoute` updates the route spec and recomputes delivery
-  *     synchronously.
-  *   - `assignToRoute` attaches a new itinerary and recomputes delivery
-  *     synchronously.
-  *   - `deriveDeliveryProgress` accepts a handling history and recomputes the
-  *     delivery snapshot asynchronously (handling events live in a separate
-  *     aggregate).
-  *
-  * Pure domain — no JPA annotations. The persistence model lives in
-  * `infrastructure.persistence.jpa` (phase 9).
-  */
+/**
+ * The Cargo aggregate root. Identifies a particular cargo by [[TrackingId]]
+ * and ties together its [[RouteSpecification]], [[Itinerary]], and
+ * [[Delivery]] snapshot.
+ *
+ * Behaviour mirrors the upstream Java aggregate:
+ *
+ *   - `specifyNewRoute` updates the route spec and recomputes delivery
+ *     synchronously.
+ *   - `assignToRoute` attaches a new itinerary and recomputes delivery
+ *     synchronously.
+ *   - `deriveDeliveryProgress` accepts a handling history and recomputes the
+ *     delivery snapshot asynchronously (handling events live in a separate
+ *     aggregate).
+ *
+ * Pure domain — no JPA annotations. The persistence model lives in
+ * `infrastructure.persistence.jpa` (phase 9).
+ */
 final class Cargo(val trackingId: TrackingId, initialSpec: RouteSpecification)
     extends DomainEntity[Cargo]:
-  Objects.requireNonNull(trackingId,  "Tracking ID is required")
+  Objects.requireNonNull(trackingId, "Tracking ID is required")
   Objects.requireNonNull(initialSpec, "Route specification is required")
 
   /** Origin never changes, even when the spec changes. */
@@ -33,7 +34,7 @@ final class Cargo(val trackingId: TrackingId, initialSpec: RouteSpecification)
 
   private var _routeSpecification: RouteSpecification = initialSpec
   private var _itinerary: Option[Itinerary]           = None
-  private var _delivery: Delivery                     =
+  private var _delivery: Delivery =
     Delivery.derivedFrom(_routeSpecification, None, HandlingHistory.EMPTY)
 
   /** Secondary constructor for a cargo created already routed. */
@@ -41,7 +42,7 @@ final class Cargo(val trackingId: TrackingId, initialSpec: RouteSpecification)
     this(trackingId, spec)
     Objects.requireNonNull(itinerary, "Itinerary is required")
     _itinerary = Some(itinerary)
-    _delivery  = Delivery.derivedFrom(_routeSpecification, _itinerary, HandlingHistory.EMPTY)
+    _delivery = Delivery.derivedFrom(_routeSpecification, _itinerary, HandlingHistory.EMPTY)
 
   def routeSpecification: RouteSpecification = _routeSpecification
   def itinerary: Itinerary                   = _itinerary.getOrElse(Itinerary.EMPTY)
@@ -51,13 +52,13 @@ final class Cargo(val trackingId: TrackingId, initialSpec: RouteSpecification)
   def specifyNewRoute(spec: RouteSpecification): Unit =
     Objects.requireNonNull(spec, "Route specification is required")
     _routeSpecification = spec
-    _delivery           = _delivery.updateOnRouting(spec, _itinerary)
+    _delivery = _delivery.updateOnRouting(spec, _itinerary)
 
   /** Attaches a new itinerary. Recomputes delivery synchronously. */
   def assignToRoute(itinerary: Itinerary): Unit =
     Objects.requireNonNull(itinerary, "Itinerary is required for assignment")
     _itinerary = Some(itinerary)
-    _delivery  = _delivery.updateOnRouting(_routeSpecification, _itinerary)
+    _delivery = _delivery.updateOnRouting(_routeSpecification, _itinerary)
 
   /** Recomputes delivery from the cargo's handling history. */
   def deriveDeliveryProgress(handlingHistory: HandlingHistory): Unit =

@@ -1,7 +1,6 @@
 package se.citerus.dddsample.interfaces.booking.web
 
 import java.time.Instant
-import scala.beans.BeanProperty
 
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -13,10 +12,11 @@ import se.citerus.dddsample.interfaces.booking.facade.dto.{
   RouteCandidateDTO
 }
 
-/** REST controller for cargo administration. Upstream Java renders JSP views;
-  * Decision D5 swaps that for JSON via Spring Web MVC + Jackson, so this is a
-  * `@RestController` returning DTOs / `ResponseEntity`.
-  */
+/**
+ * REST controller for cargo administration. Upstream Java renders JSP views;
+ * Decision D5 swaps that for JSON via Spring Web MVC + Jackson, so this is a
+ * `@RestController` returning DTOs / `ResponseEntity`.
+ */
 @RestController
 @RequestMapping(path = Array("/admin"))
 final class CargoAdminController(facade: BookingServiceFacade):

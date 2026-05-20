@@ -26,7 +26,11 @@ final class BookingServiceImpl(
   private val logger = LoggerFactory.getLogger(getClass)
 
   @Transactional
-  override def bookNewCargo(origin: UnLocode, destination: UnLocode, arrivalDeadline: Instant): TrackingId =
+  override def bookNewCargo(
+      origin: UnLocode,
+      destination: UnLocode,
+      arrivalDeadline: Instant
+  ): TrackingId =
     val cargo = cargoFactory.createCargo(origin, destination, arrivalDeadline)
     cargoRepository.store(cargo)
     logger.info("Booked new cargo with tracking id {}", cargo.trackingId.idString)
@@ -41,7 +45,9 @@ final class BookingServiceImpl(
   @Transactional
   override def assignCargoToRoute(itinerary: Itinerary, trackingId: TrackingId): Unit =
     val cargo = cargoRepository.find(trackingId).getOrElse {
-      throw new IllegalArgumentException(s"Can't assign itinerary to non-existing cargo $trackingId")
+      throw new IllegalArgumentException(
+        s"Can't assign itinerary to non-existing cargo $trackingId"
+      )
     }
     cargo.assignToRoute(itinerary)
     cargoRepository.store(cargo)
@@ -49,13 +55,14 @@ final class BookingServiceImpl(
 
   @Transactional
   override def changeDestination(trackingId: TrackingId, unLocode: UnLocode): Unit =
-    val cargo          = cargoRepository.find(trackingId).getOrElse {
+    val cargo = cargoRepository.find(trackingId).getOrElse {
       throw new IllegalArgumentException(s"Unknown cargo $trackingId")
     }
     val newDestination = locationRepository.find(unLocode).getOrElse {
       throw new IllegalArgumentException(s"Unknown destination ${unLocode.idString}")
     }
-    val newSpec = RouteSpecification(cargo.origin, newDestination, cargo.routeSpecification.arrivalDeadline)
+    val newSpec =
+      RouteSpecification(cargo.origin, newDestination, cargo.routeSpecification.arrivalDeadline)
     cargo.specifyNewRoute(newSpec)
     cargoRepository.store(cargo)
     logger.info("Changed destination for cargo {} to {}", trackingId.idString, newSpec.destination)

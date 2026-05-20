@@ -7,18 +7,20 @@ import se.citerus.dddsample.domain.model.handling.{HandlingEvent, HandlingEventT
 import se.citerus.dddsample.domain.model.location.Location
 import se.citerus.dddsample.domain.shared.ValueObject
 
-/** An itinerary — an ordered list of [[Leg]]s describing the route a cargo
-  * follows from origin to destination.
-  *
-  * The empty `Itinerary` exists only as the [[Itinerary.EMPTY]] sentinel used
-  * by [[Cargo]] when no route is yet assigned. Production itineraries created
-  * via `apply` must be non-empty and contain no nulls.
-  */
+/**
+ * An itinerary — an ordered list of [[Leg]]s describing the route a cargo
+ * follows from origin to destination.
+ *
+ * The empty `Itinerary` exists only as the [[Itinerary.EMPTY]] sentinel used
+ * by [[Cargo]] when no route is yet assigned. Production itineraries created
+ * via `apply` must be non-empty and contain no nulls.
+ */
 final class Itinerary private (val legs: List[Leg]) extends ValueObject[Itinerary]:
 
-  /** True if `event` is consistent with this itinerary. CUSTOMS events are
-    * always accepted; the empty itinerary accepts every event.
-    */
+  /**
+   * True if `event` is consistent with this itinerary. CUSTOMS events are
+   * always accepted; the empty itinerary accepts every event.
+   */
   def isExpected(event: HandlingEvent): Boolean =
     if legs.isEmpty then true
     else
@@ -31,9 +33,7 @@ final class Itinerary private (val legs: List[Leg]) extends ValueObject[Itinerar
               l.voyage.sameIdentityAs(event.voyage)
           )
         case HandlingEventType.UNLOAD =>
-          legs.exists(l =>
-            l.unloadLocation == event.location && l.voyage == event.voyage
-          )
+          legs.exists(l => l.unloadLocation == event.location && l.voyage == event.voyage)
         case HandlingEventType.CLAIM =>
           lastLeg.exists(_.unloadLocation == event.location)
         case HandlingEventType.CUSTOMS => true
@@ -60,14 +60,15 @@ final class Itinerary private (val legs: List[Leg]) extends ValueObject[Itinerar
 
 object Itinerary:
 
-  /** Sentinel returned by `Cargo.itinerary` when no route has been assigned.
-    * Not a valid production itinerary; bypasses the non-empty check via the
-    * private constructor.
-    */
+  /**
+   * Sentinel returned by `Cargo.itinerary` when no route has been assigned.
+   * Not a valid production itinerary; bypasses the non-empty check via the
+   * private constructor.
+   */
   val EMPTY: Itinerary = new Itinerary(Nil)
 
   def apply(legs: List[Leg]): Itinerary =
     Objects.requireNonNull(legs, "legs must not be null")
     require(!legs.contains(null), "legs must not contain null")
-    require(legs.nonEmpty,        "legs must not be empty")
+    require(legs.nonEmpty, "legs must not be empty")
     new Itinerary(legs)

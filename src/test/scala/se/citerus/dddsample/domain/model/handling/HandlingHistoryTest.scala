@@ -26,25 +26,30 @@ class HandlingHistoryTest extends AnyFunSuite with Matchers:
   private val t1 = Instant.parse("2026-03-05T00:00:00Z")
   private val t2 = Instant.parse("2026-03-10T00:00:00Z")
 
-  private val event1 = HandlingEvent(cargo, t1, Instant.ofEpochMilli(100), HandlingEventType.LOAD,   SHA, voyage)
+  private val event1 =
+    HandlingEvent(cargo, t1, Instant.ofEpochMilli(100), HandlingEventType.LOAD, SHA, voyage)
   // Same business identity (same cargo, voyage, location, type, completionTime) — different registrationTime.
-  private val event1dup = HandlingEvent(cargo, t1, Instant.ofEpochMilli(200), HandlingEventType.LOAD,   SHA, voyage)
-  private val event2 = HandlingEvent(cargo, t2, Instant.ofEpochMilli(150), HandlingEventType.UNLOAD, DAL, voyage)
+  private val event1dup =
+    HandlingEvent(cargo, t1, Instant.ofEpochMilli(200), HandlingEventType.LOAD, SHA, voyage)
+  private val event2 =
+    HandlingEvent(cargo, t2, Instant.ofEpochMilli(150), HandlingEventType.UNLOAD, DAL, voyage)
 
   test("EMPTY has no events and no most-recent event") {
     HandlingHistory.EMPTY.distinctEventsByCompletionTime shouldBe empty
-    HandlingHistory.EMPTY.mostRecentlyCompletedEvent     shouldBe None
+    HandlingHistory.EMPTY.mostRecentlyCompletedEvent shouldBe None
   }
 
   test("distinctEventsByCompletionTime deduplicates and orders ascending") {
-    val history = HandlingHistory(List(event2, event1, event1dup))
+    val history  = HandlingHistory(List(event2, event1, event1dup))
     val distinct = history.distinctEventsByCompletionTime
     distinct should have size 2
     distinct.map(_.completionTime) shouldEqual List(t1, t2)
   }
 
   test("mostRecentlyCompletedEvent returns the latest by completion time") {
-    HandlingHistory(List(event1, event2, event1dup)).mostRecentlyCompletedEvent shouldEqual Some(event2)
+    HandlingHistory(List(event1, event2, event1dup)).mostRecentlyCompletedEvent shouldEqual Some(
+      event2
+    )
   }
 
   test("rejects null events collection") {

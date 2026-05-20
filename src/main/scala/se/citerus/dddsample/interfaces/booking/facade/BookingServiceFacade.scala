@@ -8,9 +8,10 @@ import se.citerus.dddsample.interfaces.booking.facade.dto.{
   RouteCandidateDTO
 }
 
-/** Shields the domain layer from UI / remoting concerns. All arguments and
-  * results are primitive Strings or DTOs.
-  */
+/**
+ * Shields the domain layer from UI / remoting concerns. All arguments and
+ * results are primitive Strings or DTOs.
+ */
 trait BookingServiceFacade:
 
   def bookNewCargo(origin: String, destination: String, arrivalDeadline: Instant): String

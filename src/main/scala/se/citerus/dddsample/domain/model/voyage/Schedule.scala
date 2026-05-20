@@ -4,12 +4,13 @@ import java.util.Objects
 
 import se.citerus.dddsample.domain.shared.ValueObject
 
-/** A voyage schedule — an ordered list of [[CarrierMovement]]s.
-  *
-  * Production schedules must contain at least one non-null movement; the
-  * `apply` factory enforces this. The sentinel [[Schedule.EMPTY]] used only by
-  * [[Voyage.NONE]] bypasses the check via the private constructor.
-  */
+/**
+ * A voyage schedule — an ordered list of [[CarrierMovement]]s.
+ *
+ * Production schedules must contain at least one non-null movement; the
+ * `apply` factory enforces this. The sentinel [[Schedule.EMPTY]] used only by
+ * [[Voyage.NONE]] bypasses the check via the private constructor.
+ */
 final class Schedule private (val carrierMovements: List[CarrierMovement])
     extends ValueObject[Schedule]:
 
@@ -23,10 +24,11 @@ final class Schedule private (val carrierMovements: List[CarrierMovement])
   override def hashCode: Int = carrierMovements.hashCode
 
 object Schedule:
-  /** Null-object schedule used only by [[Voyage.NONE]]. Not a valid schedule
-    * for live cargo; production code uses [[Schedule.apply]] which enforces
-    * non-emptiness.
-    */
+  /**
+   * Null-object schedule used only by [[Voyage.NONE]]. Not a valid schedule
+   * for live cargo; production code uses [[Schedule.apply]] which enforces
+   * non-emptiness.
+   */
   val EMPTY: Schedule = new Schedule(Nil)
 
   def apply(carrierMovements: List[CarrierMovement]): Schedule =

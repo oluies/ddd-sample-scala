@@ -8,7 +8,12 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 import se.citerus.dddsample.application.ApplicationEvents
-import se.citerus.dddsample.domain.model.cargo.{Cargo, CargoRepository, RouteSpecification, TrackingId}
+import se.citerus.dddsample.domain.model.cargo.{
+  Cargo,
+  CargoRepository,
+  RouteSpecification,
+  TrackingId
+}
 import se.citerus.dddsample.domain.model.handling.{
   HandlingEvent,
   HandlingEventFactory,
@@ -32,10 +37,15 @@ class HandlingEventServiceImplTest extends AnyFunSuite with Matchers:
 
   private val voyage = new Voyage(
     VoyageNumber("CM001"),
-    Schedule(List(CarrierMovement(STOCKHOLM, HAMBURG, Instant.ofEpochMilli(1), Instant.ofEpochMilli(2))))
+    Schedule(
+      List(CarrierMovement(STOCKHOLM, HAMBURG, Instant.ofEpochMilli(1), Instant.ofEpochMilli(2)))
+    )
   )
 
-  private val cargo = new Cargo(TrackingId("ABC"), RouteSpecification(HAMBURG, TOKYO, Instant.parse("2026-12-01T00:00:00Z")))
+  private val cargo = new Cargo(
+    TrackingId("ABC"),
+    RouteSpecification(HAMBURG, TOKYO, Instant.parse("2026-12-01T00:00:00Z"))
+  )
 
   test("registerHandlingEvent stores the event and publishes cargoWasHandled") {
     val cargoRepository         = mock(classOf[CargoRepository])
@@ -43,8 +53,8 @@ class HandlingEventServiceImplTest extends AnyFunSuite with Matchers:
     val handlingEventRepository = mock(classOf[HandlingEventRepository])
     val locationRepository      = mock(classOf[LocationRepository])
     val applicationEvents       = mock(classOf[ApplicationEvents])
-    val factory   = new HandlingEventFactory(cargoRepository, voyageRepository, locationRepository)
-    val service   = new HandlingEventServiceImpl(handlingEventRepository, applicationEvents, factory)
+    val factory = new HandlingEventFactory(cargoRepository, voyageRepository, locationRepository)
+    val service = new HandlingEventServiceImpl(handlingEventRepository, applicationEvents, factory)
 
     when(cargoRepository.find(cargo.trackingId)).thenReturn(Some(cargo))
     when(voyageRepository.find(voyage.voyageNumber)).thenReturn(Some(voyage))

@@ -1,6 +1,7 @@
 package se.citerus.dddsample.interfaces.handling.ws
 
 import jakarta.validation.Valid
+
 import org.slf4j.LoggerFactory
 import org.springframework.http.{HttpStatus, MediaType, ResponseEntity}
 import org.springframework.web.bind.annotation.{PostMapping, RequestBody, RestController}
@@ -8,16 +9,18 @@ import org.springframework.web.bind.annotation.{PostMapping, RequestBody, RestCo
 import se.citerus.dddsample.application.ApplicationEvents
 import se.citerus.dddsample.interfaces.handling.HandlingReportParser
 
-/** Validates and parses incoming handling reports, then forwards each
-  * resulting attempt to [[ApplicationEvents]].
-  */
+/**
+ * Validates and parses incoming handling reports, then forwards each
+ * resulting attempt to [[ApplicationEvents]].
+ */
 @RestController
-final class HandlingReportServiceImpl(applicationEvents: ApplicationEvents) extends HandlingReportService:
+final class HandlingReportServiceImpl(applicationEvents: ApplicationEvents)
+    extends HandlingReportService:
 
   private val logger = LoggerFactory.getLogger(getClass)
 
   @PostMapping(
-    path     = Array("/handlingReport"),
+    path = Array("/handlingReport"),
     produces = Array(MediaType.APPLICATION_JSON_VALUE),
     consumes = Array(MediaType.APPLICATION_JSON_VALUE)
   )
@@ -29,4 +32,6 @@ final class HandlingReportServiceImpl(applicationEvents: ApplicationEvents) exte
     catch
       case e: Exception =>
         logger.error("Unexpected error in submitReport", e)
-        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(s"Internal server error: ${e.getMessage}")
+        ResponseEntity
+          .status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(s"Internal server error: ${e.getMessage}")

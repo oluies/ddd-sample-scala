@@ -21,7 +21,8 @@ class BookingServiceImplTest extends AnyFunSuite with Matchers:
     val locationRepository = mock(classOf[LocationRepository])
     val routingService     = mock(classOf[RoutingService])
     val cargoFactory       = new CargoFactory(locationRepository, cargoRepository)
-    val booking            = new BookingServiceImpl(cargoRepository, locationRepository, routingService, cargoFactory)
+    val booking =
+      new BookingServiceImpl(cargoRepository, locationRepository, routingService, cargoFactory)
 
     val expectedTrackingId = TrackingId("TRK1")
     when(cargoRepository.nextTrackingId()).thenReturn(expectedTrackingId)

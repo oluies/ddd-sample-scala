@@ -19,11 +19,14 @@ class VoyageTest extends AnyFunSuite with Matchers:
   private val t3 = Instant.ofEpochSecond(10800)
 
   test("identity is by VoyageNumber") {
-    val v1 = new Voyage(VoyageNumber("V001"), Schedule(List(CarrierMovement(STOCKHOLM, HAMBURG, t0, t1))))
-    val v2 = new Voyage(VoyageNumber("V001"), Schedule(List(CarrierMovement(HAMBURG, NEWYORK, t2, t3))))
-    val v3 = new Voyage(VoyageNumber("V002"), Schedule(List(CarrierMovement(STOCKHOLM, HAMBURG, t0, t1))))
+    val v1 =
+      new Voyage(VoyageNumber("V001"), Schedule(List(CarrierMovement(STOCKHOLM, HAMBURG, t0, t1))))
+    val v2 =
+      new Voyage(VoyageNumber("V001"), Schedule(List(CarrierMovement(HAMBURG, NEWYORK, t2, t3))))
+    val v3 =
+      new Voyage(VoyageNumber("V002"), Schedule(List(CarrierMovement(STOCKHOLM, HAMBURG, t0, t1))))
 
-    v1.sameIdentityAs(v2) shouldBe true   // same voyage number, different schedule
+    v1.sameIdentityAs(v2) shouldBe true // same voyage number, different schedule
     v1.sameIdentityAs(v3) shouldBe false
     (v1 == v2) shouldBe true
     (v1 == v3) shouldBe false

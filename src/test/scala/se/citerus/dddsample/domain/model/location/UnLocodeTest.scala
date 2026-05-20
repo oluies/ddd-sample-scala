@@ -1,16 +1,15 @@
 package se.citerus.dddsample.domain.model.location
 
+import org.scalacheck.Gen
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import org.scalacheck.Gen
 
 /** Translation of upstream `UnLocodeTest`. */
 class UnLocodeTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks:
 
   test("accepts valid UN/LOCODEs") {
-    for input <- List("AA234", "AAA9B", "AAAAA") do
-      noException should be thrownBy UnLocode(input)
+    for input <- List("AA234", "AAA9B", "AAAAA") do noException should be thrownBy UnLocode(input)
   }
 
   test("rejects invalid UN/LOCODEs") {
@@ -30,10 +29,10 @@ class UnLocodeTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChec
     val allCaps   = UnLocode("ABCDE")
     val mixedCase = UnLocode("aBcDe")
 
-    allCaps    shouldEqual mixedCase
-    mixedCase  shouldEqual allCaps
-    allCaps    shouldEqual allCaps
-    allCaps    should not equal UnLocode("FGHIJ")
+    allCaps shouldEqual mixedCase
+    mixedCase shouldEqual allCaps
+    allCaps shouldEqual allCaps
+    allCaps should not equal UnLocode("FGHIJ")
   }
 
   test("hashCode agrees with equals") {
@@ -50,9 +49,7 @@ class UnLocodeTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChec
     yield cc + lc
 
   test("any valid input round-trips through idString as upper-case") {
-    forAll(validInput) { s =>
-      UnLocode(s).idString shouldEqual s.toUpperCase
-    }
+    forAll(validInput)(s => UnLocode(s).idString shouldEqual s.toUpperCase)
   }
 
   test("any valid input equals itself by sameValueAs") {

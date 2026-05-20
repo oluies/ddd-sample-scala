@@ -7,8 +7,11 @@ import org.scalatest.matchers.should.Matchers
 class LocationTest extends AnyFunSuite with Matchers:
 
   test("equality is by UN locode") {
-    Location(UnLocode("ATEST"), "test-name")  shouldEqual Location(UnLocode("ATEST"), "test-name")
-    Location(UnLocode("ATEST"), "test-name")  should not equal Location(UnLocode("TESTB"), "test-name")
+    Location(UnLocode("ATEST"), "test-name") shouldEqual Location(UnLocode("ATEST"), "test-name")
+    Location(UnLocode("ATEST"), "test-name") should not equal Location(
+      UnLocode("TESTB"),
+      "test-name"
+    )
   }
 
   test("equal to itself") {

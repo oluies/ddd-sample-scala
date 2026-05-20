@@ -12,8 +12,11 @@ ThisBuild / scalacOptions ++= Seq(
   "-unchecked",
   "-encoding", "UTF-8",
   "-explain",
-  "-source:3.3"
-  // -Wunused:imports / -Wvalue-discard / -Xfatal-warnings re-enable after phase 17 cleanup.
+  "-source:3.3",
+  "-Wunused:imports"
+  // -Wvalue-discard / -Xfatal-warnings still off — re-enable once the remaining
+  // unit-discarded expressions (Spring's void setters, JMS sends, JList builders)
+  // have explicit `: Unit` ascriptions.
 )
 
 // ---------------------------------------------------------------------------

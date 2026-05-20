@@ -3,9 +3,10 @@ package se.citerus.dddsample.application.util
 import java.time.Instant
 import java.time.format.DateTimeParseException
 
-/** Test-friendly helpers for parsing ISO-style date / date-time strings into
-  * [[Instant]]s.
-  */
+/**
+ * Test-friendly helpers for parsing ISO-style date / date-time strings into
+ * [[Instant]]s.
+ */
 object DateUtils:
 
   /** Parse `yyyy-MM-dd` as midnight UTC. */

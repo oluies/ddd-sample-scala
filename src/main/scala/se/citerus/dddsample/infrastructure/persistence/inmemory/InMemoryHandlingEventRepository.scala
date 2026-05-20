@@ -11,9 +11,10 @@ import se.citerus.dddsample.domain.model.handling.{
   HandlingHistory
 }
 
-/** In-memory [[HandlingEventRepository]]. Stores events in an append-only
-  * list (events are immutable value-like aggregates and are never updated).
-  */
+/**
+ * In-memory [[HandlingEventRepository]]. Stores events in an append-only
+ * list (events are immutable value-like aggregates and are never updated).
+ */
 final class InMemoryHandlingEventRepository extends HandlingEventRepository:
 
   private val events = new CopyOnWriteArrayList[HandlingEvent]()

@@ -36,9 +36,11 @@ final class BookingServiceFacadeImpl(
     bookingService.bookNewCargo(UnLocode(origin), UnLocode(destination), arrivalDeadline).idString
 
   override def loadCargoForRouting(trackingId: String): CargoRoutingDTO =
-    val cargo = cargoRepository.find(TrackingId(trackingId)).getOrElse(
-      throw new NoSuchElementException(s"Unknown cargo $trackingId")
-    )
+    val cargo = cargoRepository
+      .find(TrackingId(trackingId))
+      .getOrElse(
+        throw new NoSuchElementException(s"Unknown cargo $trackingId")
+      )
     cargoAssembler.toDTO(cargo)
 
   override def assignCargoToRoute(trackingIdStr: String, route: RouteCandidateDTO): Unit =
@@ -52,4 +54,6 @@ final class BookingServiceFacadeImpl(
     cargoRepository.getAll.map(cargoAssembler.toDTO)
 
   override def requestPossibleRoutesForCargo(trackingId: String): List[RouteCandidateDTO] =
-    bookingService.requestPossibleRoutesForCargo(TrackingId(trackingId)).map(itineraryAssembler.toDTO)
+    bookingService
+      .requestPossibleRoutesForCargo(TrackingId(trackingId))
+      .map(itineraryAssembler.toDTO)

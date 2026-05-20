@@ -25,15 +25,21 @@ final class ItineraryCandidateDTOAssembler:
       locationRepository: LocationRepository
   ): Itinerary =
     val legs = dto.legs.map { legDTO =>
-      val voyage = voyageRepository.find(VoyageNumber(legDTO.voyageNumber)).getOrElse(
-        throw new NoSuchElementException(s"Unknown voyage ${legDTO.voyageNumber}")
-      )
-      val from = locationRepository.find(UnLocode(legDTO.from)).getOrElse(
-        throw new NoSuchElementException(s"Unknown origin ${legDTO.from}")
-      )
-      val to = locationRepository.find(UnLocode(legDTO.to)).getOrElse(
-        throw new NoSuchElementException(s"Unknown destination ${legDTO.to}")
-      )
+      val voyage = voyageRepository
+        .find(VoyageNumber(legDTO.voyageNumber))
+        .getOrElse(
+          throw new NoSuchElementException(s"Unknown voyage ${legDTO.voyageNumber}")
+        )
+      val from = locationRepository
+        .find(UnLocode(legDTO.from))
+        .getOrElse(
+          throw new NoSuchElementException(s"Unknown origin ${legDTO.from}")
+        )
+      val to = locationRepository
+        .find(UnLocode(legDTO.to))
+        .getOrElse(
+          throw new NoSuchElementException(s"Unknown destination ${legDTO.to}")
+        )
       Leg(voyage, from, to, legDTO.loadTime, legDTO.unloadTime)
     }
     Itinerary(legs)

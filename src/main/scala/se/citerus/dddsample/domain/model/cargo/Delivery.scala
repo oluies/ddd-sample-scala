@@ -3,35 +3,42 @@ package se.citerus.dddsample.domain.model.cargo
 import java.time.Instant
 import java.util.Objects
 
-import se.citerus.dddsample.domain.model.handling.{HandlingEvent, HandlingEventType, HandlingHistory}
+import se.citerus.dddsample.domain.model.handling.{
+  HandlingEvent,
+  HandlingEventType,
+  HandlingHistory
+}
 import se.citerus.dddsample.domain.model.location.Location
 import se.citerus.dddsample.domain.model.voyage.Voyage
 import se.citerus.dddsample.domain.shared.ValueObject
 
-/** The actual transportation state of a cargo, as opposed to the customer
-  * requirement ([[RouteSpecification]]) and the plan ([[Itinerary]]).
-  *
-  * Pure value object — replaced wholesale whenever routing or handling
-  * changes. Recomputes all derived state in the constructor.
-  */
+/**
+ * The actual transportation state of a cargo, as opposed to the customer
+ * requirement ([[RouteSpecification]]) and the plan ([[Itinerary]]).
+ *
+ * Pure value object — replaced wholesale whenever routing or handling
+ * changes. Recomputes all derived state in the constructor.
+ */
 final class Delivery private (
     val lastEvent: Option[HandlingEvent],
     itineraryOpt: Option[Itinerary],
     routeSpecification: RouteSpecification
 ) extends ValueObject[Delivery]:
 
-  val calculatedAt: Instant             = Instant.now()
-  val transportStatus: TransportStatus  = Delivery.calculateTransportStatus(lastEvent)
-  val routingStatus: RoutingStatus      = Delivery.calculateRoutingStatus(itineraryOpt, routeSpecification)
-  val misdirected: Boolean              = Delivery.calculateMisdirected(lastEvent, itineraryOpt)
+  val calculatedAt: Instant            = Instant.now()
+  val transportStatus: TransportStatus = Delivery.calculateTransportStatus(lastEvent)
+  val routingStatus: RoutingStatus =
+    Delivery.calculateRoutingStatus(itineraryOpt, routeSpecification)
+  val misdirected: Boolean = Delivery.calculateMisdirected(lastEvent, itineraryOpt)
   val lastKnownLocationOpt: Option[Location] = lastEvent.map(_.location)
-  val currentVoyageOpt: Option[Voyage]  =
+  val currentVoyageOpt: Option[Voyage] =
     if transportStatus == TransportStatus.ONBOARD_CARRIER then lastEvent.map(_.voyage) else None
-  val eta: Option[Instant]              =
+  val eta: Option[Instant] =
     if isOnTrack then itineraryOpt.map(_.finalArrivalDate) else None
   val nextExpectedActivity: Option[HandlingActivity] =
     Delivery.calculateNextExpectedActivity(isOnTrack, lastEvent, routeSpecification, itineraryOpt)
-  val isUnloadedAtDestination: Boolean  = Delivery.calculateUnloadedAtDestination(lastEvent, routeSpecification)
+  val isUnloadedAtDestination: Boolean =
+    Delivery.calculateUnloadedAtDestination(lastEvent, routeSpecification)
 
   def isMisdirected: Boolean = misdirected
 
@@ -41,16 +48,18 @@ final class Delivery private (
   /** Current voyage, or [[Voyage.NONE]] if not on board. */
   def currentVoyage: Voyage = currentVoyageOpt.getOrElse(Voyage.NONE)
 
-  /** Estimated time of arrival as a nullable Java-style accessor: returns
-    * `null` if unknown. Scala callers should prefer the `eta` field directly.
-    */
+  /**
+   * Estimated time of arrival as a nullable Java-style accessor: returns
+   * `null` if unknown. Scala callers should prefer the `eta` field directly.
+   */
   def estimatedTimeOfArrival: Instant | Null = eta.orNull
 
   private def isOnTrack: Boolean = routingStatus == RoutingStatus.ROUTED && !misdirected
 
-  /** Snapshot reflecting only a routing change — no new handling, but the
-    * itinerary or specification has changed.
-    */
+  /**
+   * Snapshot reflecting only a routing change — no new handling, but the
+   * itinerary or specification has changed.
+   */
   def updateOnRouting(spec: RouteSpecification, itinerary: Option[Itinerary]): Delivery =
     Objects.requireNonNull(spec, "Route specification is required")
     new Delivery(lastEvent, itinerary, spec)
@@ -94,12 +103,12 @@ object Delivery:
       handlingHistory: HandlingHistory
   ): Delivery =
     Objects.requireNonNull(routeSpecification, "Route specification is required")
-    Objects.requireNonNull(handlingHistory,    "Delivery history is required")
+    Objects.requireNonNull(handlingHistory, "Delivery history is required")
     new Delivery(handlingHistory.mostRecentlyCompletedEvent, itinerary, routeSpecification)
 
   private def calculateTransportStatus(last: Option[HandlingEvent]): TransportStatus =
     last match
-      case None     => TransportStatus.NOT_RECEIVED
+      case None => TransportStatus.NOT_RECEIVED
       case Some(ev) =>
         ev.eventType match
           case HandlingEventType.LOAD    => TransportStatus.ONBOARD_CARRIER
@@ -113,8 +122,9 @@ object Delivery:
       spec: RouteSpecification
   ): RoutingStatus =
     itinerary match
-      case None    => RoutingStatus.NOT_ROUTED
-      case Some(i) => if spec.isSatisfiedBy(i) then RoutingStatus.ROUTED else RoutingStatus.MISROUTED
+      case None => RoutingStatus.NOT_ROUTED
+      case Some(i) =>
+        if spec.isSatisfiedBy(i) then RoutingStatus.ROUTED else RoutingStatus.MISROUTED
 
   private def calculateMisdirected(
       last: Option[HandlingEvent],
@@ -142,7 +152,7 @@ object Delivery:
     if !onTrack then None
     else
       last match
-        case None     => Some(HandlingActivity(HandlingEventType.RECEIVE, spec.origin))
+        case None => Some(HandlingActivity(HandlingEventType.RECEIVE, spec.origin))
         case Some(ev) =>
           val legs = itinerary.map(_.legs).getOrElse(Nil)
           ev.eventType match
@@ -159,5 +169,7 @@ object Delivery:
                 val nextLeg = legs(idx + 1)
                 Some(HandlingActivity(HandlingEventType.LOAD, nextLeg.loadLocation, nextLeg.voyage))
             case HandlingEventType.RECEIVE =>
-              legs.headOption.map(l => HandlingActivity(HandlingEventType.LOAD, l.loadLocation, l.voyage))
+              legs.headOption.map(l =>
+                HandlingActivity(HandlingEventType.LOAD, l.loadLocation, l.voyage)
+              )
             case HandlingEventType.CLAIM | HandlingEventType.CUSTOMS => None

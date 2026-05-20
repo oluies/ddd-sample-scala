@@ -1,8 +1,7 @@
 package se.citerus.dddsample.interfaces.tracking.ws
 
-import java.util.Locale
-
 import jakarta.servlet.http.HttpServletRequest
+
 import org.slf4j.LoggerFactory
 import org.springframework.context.MessageSource
 import org.springframework.http.{MediaType, ResponseEntity}
@@ -32,7 +31,7 @@ final class CargoTrackingRestService(
       val locale = RequestContextUtils.getLocale(request)
       val trkId  = TrackingId(trackingId)
       cargoRepository.find(trkId) match
-        case None        => ResponseEntity.notFound().build()
+        case None => ResponseEntity.notFound().build()
         case Some(cargo) =>
           val events = handlingEventRepository
             .lookupHandlingHistoryOfCargo(trkId)

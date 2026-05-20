@@ -24,7 +24,7 @@ class InMemoryRepositoriesTest extends AnyFunSuite with Matchers:
   }
 
   test("InMemoryCargoRepository stores and mints fresh tracking ids") {
-    val repo = new InMemoryCargoRepository
+    val repo  = new InMemoryCargoRepository
     val spec  = RouteSpecification(SHA, GOT, Instant.parse("2026-12-01T00:00:00Z"))
     val cargo = new Cargo(TrackingId("XYZ"), spec)
     repo.store(cargo)
@@ -47,13 +47,13 @@ class InMemoryRepositoriesTest extends AnyFunSuite with Matchers:
   }
 
   test("InMemoryHandlingEventRepository scopes history to the requested cargo") {
-    val repo  = new InMemoryHandlingEventRepository
-    val spec  = RouteSpecification(SHA, GOT, Instant.parse("2026-12-01T00:00:00Z"))
-    val c1    = new Cargo(TrackingId("C1"), spec)
-    val c2    = new Cargo(TrackingId("C2"), spec)
-    val now   = Instant.now()
-    val e1    = HandlingEvent(c1, now, now, HandlingEventType.RECEIVE, SHA)
-    val e2    = HandlingEvent(c2, now, now, HandlingEventType.RECEIVE, SHA)
+    val repo = new InMemoryHandlingEventRepository
+    val spec = RouteSpecification(SHA, GOT, Instant.parse("2026-12-01T00:00:00Z"))
+    val c1   = new Cargo(TrackingId("C1"), spec)
+    val c2   = new Cargo(TrackingId("C2"), spec)
+    val now  = Instant.now()
+    val e1   = HandlingEvent(c1, now, now, HandlingEventType.RECEIVE, SHA)
+    val e2   = HandlingEvent(c2, now, now, HandlingEventType.RECEIVE, SHA)
     repo.store(e1)
     repo.store(e2)
     val history = repo.lookupHandlingHistoryOfCargo(TrackingId("C1"))

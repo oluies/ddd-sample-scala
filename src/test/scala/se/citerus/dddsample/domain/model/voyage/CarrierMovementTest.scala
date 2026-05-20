@@ -7,10 +7,11 @@ import org.scalatest.matchers.should.Matchers
 
 import se.citerus.dddsample.domain.model.location.{Location, UnLocode}
 
-/** Translation of upstream `CarrierMovementTest`. Defines the two test
-  * locations inline rather than depending on `SampleLocations`, which lives
-  * in `infrastructure.sampledata` (phase 10, not yet ported).
-  */
+/**
+ * Translation of upstream `CarrierMovementTest`. Defines the two test
+ * locations inline rather than depending on `SampleLocations`, which lives
+ * in `infrastructure.sampledata` (phase 10, not yet ported).
+ */
 class CarrierMovementTest extends AnyFunSuite with Matchers:
 
   private val STOCKHOLM = Location(UnLocode("SESTO"), "Stockholm")
@@ -31,10 +32,30 @@ class CarrierMovementTest extends AnyFunSuite with Matchers:
     // Same instant in distinct objects (production carrier movements
     // typically arrive from different processes so the Instant references
     // differ even when their values are equal).
-    val cm1 = CarrierMovement(STOCKHOLM, HAMBURG, Instant.ofEpochMilli(t.toEpochMilli), Instant.ofEpochMilli(t.toEpochMilli))
-    val cm2 = CarrierMovement(STOCKHOLM, HAMBURG, Instant.ofEpochMilli(t.toEpochMilli), Instant.ofEpochMilli(t.toEpochMilli))
-    val cm3 = CarrierMovement(HAMBURG, STOCKHOLM, Instant.ofEpochMilli(t.toEpochMilli), Instant.ofEpochMilli(t.toEpochMilli))
-    val cm4 = CarrierMovement(HAMBURG, STOCKHOLM, Instant.ofEpochMilli(t.toEpochMilli), Instant.ofEpochMilli(t.toEpochMilli))
+    val cm1 = CarrierMovement(
+      STOCKHOLM,
+      HAMBURG,
+      Instant.ofEpochMilli(t.toEpochMilli),
+      Instant.ofEpochMilli(t.toEpochMilli)
+    )
+    val cm2 = CarrierMovement(
+      STOCKHOLM,
+      HAMBURG,
+      Instant.ofEpochMilli(t.toEpochMilli),
+      Instant.ofEpochMilli(t.toEpochMilli)
+    )
+    val cm3 = CarrierMovement(
+      HAMBURG,
+      STOCKHOLM,
+      Instant.ofEpochMilli(t.toEpochMilli),
+      Instant.ofEpochMilli(t.toEpochMilli)
+    )
+    val cm4 = CarrierMovement(
+      HAMBURG,
+      STOCKHOLM,
+      Instant.ofEpochMilli(t.toEpochMilli),
+      Instant.ofEpochMilli(t.toEpochMilli)
+    )
 
     cm1.sameValueAs(cm2) shouldBe true
     cm2.sameValueAs(cm3) shouldBe false
@@ -51,5 +72,5 @@ class CarrierMovementTest extends AnyFunSuite with Matchers:
 
   test("NONE is the null object") {
     CarrierMovement.NONE.departureLocation shouldEqual Location.UNKNOWN
-    CarrierMovement.NONE.arrivalLocation   shouldEqual Location.UNKNOWN
+    CarrierMovement.NONE.arrivalLocation shouldEqual Location.UNKNOWN
   }
