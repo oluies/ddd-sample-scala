@@ -30,10 +30,10 @@ final class Itinerary private (val legs: List[Leg]) extends ValueObject[Itinerar
         case HandlingEventType.LOAD =>
           legs.exists(l =>
             l.loadLocation.sameIdentityAs(event.location) &&
-              l.voyage.sameIdentityAs(event.voyage)
+              event.voyage.exists(v => l.voyage.sameIdentityAs(v))
           )
         case HandlingEventType.UNLOAD =>
-          legs.exists(l => l.unloadLocation == event.location && l.voyage == event.voyage)
+          legs.exists(l => l.unloadLocation == event.location && event.voyage.contains(l.voyage))
         case HandlingEventType.CLAIM =>
           lastLeg.exists(_.unloadLocation == event.location)
         case HandlingEventType.CUSTOMS => true

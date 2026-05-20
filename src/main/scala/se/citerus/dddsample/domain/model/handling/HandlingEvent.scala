@@ -18,10 +18,10 @@ import se.citerus.dddsample.domain.shared.DomainEvent
  * aggregate. Domain layer stays JPA-annotation-free; the persistence model
  * lives in `infrastructure.persistence.jpa` (phase 9).
  *
- * `voyage` is optional — `RECEIVE`, `CLAIM`, `CUSTOMS` events have no
- * voyage; `LOAD` / `UNLOAD` require one. We expose `voyage` as a public
- * field returning `Voyage` (defaulting to `Voyage.NONE` for the non-voyage
- * case) to mirror the upstream Java accessor.
+ * `voyage` is `Option[Voyage]` — `RECEIVE`, `CLAIM`, `CUSTOMS` events have
+ * `None`; `LOAD` / `UNLOAD` require `Some(_)`. The smart constructors
+ * enforce this. Callers handle `Option` directly rather than the upstream
+ * `Voyage.NONE` sentinel.
  */
 final class HandlingEvent private (
     val cargo: Cargo,
@@ -29,15 +29,13 @@ final class HandlingEvent private (
     val registrationTime: Instant,
     val eventType: HandlingEventType,
     val location: Location,
-    private val voyageOpt: Option[Voyage]
+    val voyage: Option[Voyage]
 ) extends DomainEvent[HandlingEvent]:
-
-  def voyage: Voyage = voyageOpt.getOrElse(Voyage.NONE)
 
   override def sameEventAs(other: HandlingEvent): Boolean =
     other != null &&
       cargo == other.cargo &&
-      voyageOpt == other.voyageOpt &&
+      voyage == other.voyage &&
       completionTime == other.completionTime &&
       location == other.location &&
       eventType == other.eventType
@@ -48,7 +46,7 @@ final class HandlingEvent private (
 
   override def hashCode: Int =
     var h = cargo.hashCode
-    h = 31 * h + voyageOpt.hashCode
+    h = 31 * h + voyage.hashCode
     h = 31 * h + completionTime.hashCode
     h = 31 * h + location.hashCode
     h = 31 * h + eventType.hashCode
@@ -71,7 +69,7 @@ final class HandlingEvent private (
       .append("Registered on: ")
       .append(registrationTime)
       .append('\n')
-    voyageOpt.foreach(v => builder.append("Voyage: ").append(v.voyageNumber.idString).append('\n'))
+    voyage.foreach(v => builder.append("Voyage: ").append(v.voyageNumber.idString).append('\n'))
     builder.toString
 
 object HandlingEvent:

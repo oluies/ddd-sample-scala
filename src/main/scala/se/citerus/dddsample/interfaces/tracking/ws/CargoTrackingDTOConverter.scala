@@ -32,7 +32,7 @@ object CargoTrackingDTOConverter:
         location = he.location.name,
         time = he.completionTime.toString,
         `type` = he.eventType.toString,
-        voyageNumber = he.voyage.voyageNumber.idString,
+        voyageNumber = he.voyage.map(_.voyageNumber.idString).getOrElse(""),
         isExpected = cargo.itinerary.isExpected(he),
         description = describe(he, messageSource, locale)
       )
@@ -51,8 +51,12 @@ object CargoTrackingDTOConverter:
   private def describe(he: HandlingEvent, ms: MessageSource, locale: Locale): String =
     val args: Array[AnyRef] = he.eventType match
       case HandlingEventType.LOAD | HandlingEventType.UNLOAD =>
+        // LOAD / UNLOAD events are required to carry a voyage by the
+        // HandlingEvent smart constructor, so `he.voyage` is always
+        // `Some(_)` here. Use `.fold` to defensively fall back to "" if
+        // that invariant is ever violated.
         Array(
-          he.voyage.voyageNumber.idString,
+          he.voyage.map(_.voyageNumber.idString).getOrElse(""),
           he.location.name,
           formatter.format(he.completionTime)
         )
@@ -64,9 +68,10 @@ object CargoTrackingDTOConverter:
     val delivery = cargo.delivery
     val code     = s"cargo.status.${delivery.transportStatus.toString}"
     val args: Array[AnyRef] = delivery.transportStatus.toString match
-      case "IN_PORT"         => Array(delivery.lastKnownLocation.name)
-      case "ONBOARD_CARRIER" => Array(delivery.currentVoyage.voyageNumber.idString)
-      case _                 => null
+      case "IN_PORT" => Array(delivery.lastKnownLocation.name)
+      case "ONBOARD_CARRIER" =>
+        Array(delivery.currentVoyage.map(_.voyageNumber.idString).getOrElse(""))
+      case _ => null
     ms.getMessage(code, args, "[Unknown status]", locale)
 
   private def nextExpectedActivity(cargo: Cargo): String =

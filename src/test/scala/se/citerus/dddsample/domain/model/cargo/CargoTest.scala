@@ -81,5 +81,5 @@ class CargoTest extends AnyFunSuite with Matchers:
     )
     val updated = routed.deriveDeliveryProgress(HandlingHistory(List(loaded)))
     updated.delivery.transportStatus shouldEqual TransportStatus.ONBOARD_CARRIER
-    updated.delivery.currentVoyage shouldEqual voyage
+    updated.delivery.currentVoyage shouldEqual Some(voyage)
   }

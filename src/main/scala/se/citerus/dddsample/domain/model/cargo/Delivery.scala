@@ -31,8 +31,9 @@ final class Delivery private (
     Delivery.calculateRoutingStatus(itineraryOpt, routeSpecification)
   val misdirected: Boolean = Delivery.calculateMisdirected(lastEvent, itineraryOpt)
   val lastKnownLocationOpt: Option[Location] = lastEvent.map(_.location)
-  val currentVoyageOpt: Option[Voyage] =
-    if transportStatus == TransportStatus.ONBOARD_CARRIER then lastEvent.map(_.voyage) else None
+  val currentVoyage: Option[Voyage] =
+    if transportStatus == TransportStatus.ONBOARD_CARRIER then lastEvent.flatMap(_.voyage)
+    else None
   val eta: Option[Instant] =
     if isOnTrack then itineraryOpt.map(_.finalArrivalDate) else None
   val nextExpectedActivity: Option[HandlingActivity] =
@@ -44,9 +45,6 @@ final class Delivery private (
 
   /** Last known location, or [[Location.UNKNOWN]] if no events received. */
   def lastKnownLocation: Location = lastKnownLocationOpt.getOrElse(Location.UNKNOWN)
-
-  /** Current voyage, or [[Voyage.NONE]] if not on board. */
-  def currentVoyage: Voyage = currentVoyageOpt.getOrElse(Voyage.NONE)
 
   /**
    * Estimated time of arrival as a nullable Java-style accessor: returns
@@ -72,7 +70,7 @@ final class Delivery private (
     other != null &&
       transportStatus == other.transportStatus &&
       lastKnownLocationOpt == other.lastKnownLocationOpt &&
-      currentVoyageOpt == other.currentVoyageOpt &&
+      currentVoyage == other.currentVoyage &&
       misdirected == other.misdirected &&
       eta == other.eta &&
       nextExpectedActivity == other.nextExpectedActivity &&
@@ -88,7 +86,7 @@ final class Delivery private (
   override def hashCode: Int =
     var h = transportStatus.hashCode
     h = 31 * h + lastKnownLocationOpt.hashCode
-    h = 31 * h + currentVoyageOpt.hashCode
+    h = 31 * h + currentVoyage.hashCode
     h = 31 * h + misdirected.hashCode
     h = 31 * h + eta.hashCode
     h = 31 * h + nextExpectedActivity.hashCode
@@ -100,11 +98,12 @@ final class Delivery private (
 
 object Delivery:
 
-  /** Builds a new snapshot from the cargo's current handling history.
-    *
-    * `now` defaults to `Instant.now()`; pass an explicit value (e.g. a
-    * fixed test clock) when deterministic `calculatedAt` matters.
-    */
+  /**
+   * Builds a new snapshot from the cargo's current handling history.
+   *
+   * `now` defaults to `Instant.now()`; pass an explicit value (e.g. a
+   * fixed test clock) when deterministic `calculatedAt` matters.
+   */
   def derivedFrom(
       routeSpecification: RouteSpecification,
       itinerary: Option[Itinerary],
