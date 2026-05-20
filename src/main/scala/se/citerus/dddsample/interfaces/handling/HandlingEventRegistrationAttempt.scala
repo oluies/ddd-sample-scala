@@ -20,13 +20,13 @@ final case class HandlingEventRegistrationAttempt(
     registrationTime: Instant,
     completionTime: Instant,
     trackingId: TrackingId,
-    voyageNumber: VoyageNumber,
+    voyageNumber: Option[VoyageNumber],
     eventType: HandlingEventType,
     unLocode: UnLocode
 ) extends Serializable:
   Objects.requireNonNull(registrationTime, "registrationTime is required")
   Objects.requireNonNull(completionTime,   "completionTime is required")
   Objects.requireNonNull(trackingId,       "trackingId is required")
-  Objects.requireNonNull(voyageNumber,     "voyageNumber is required")
+  Objects.requireNonNull(voyageNumber,     "voyageNumber must not be null Option (use None for non-voyage events)")
   Objects.requireNonNull(eventType,        "eventType is required")
   Objects.requireNonNull(unLocode,         "unLocode is required")
