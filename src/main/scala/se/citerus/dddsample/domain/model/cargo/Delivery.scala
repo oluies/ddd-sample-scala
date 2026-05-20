@@ -22,10 +22,10 @@ import se.citerus.dddsample.domain.shared.ValueObject
 final class Delivery private (
     val lastEvent: Option[HandlingEvent],
     itineraryOpt: Option[Itinerary],
-    routeSpecification: RouteSpecification
+    routeSpecification: RouteSpecification,
+    val calculatedAt: Instant
 ) extends ValueObject[Delivery]:
 
-  val calculatedAt: Instant            = Instant.now()
   val transportStatus: TransportStatus = Delivery.calculateTransportStatus(lastEvent)
   val routingStatus: RoutingStatus =
     Delivery.calculateRoutingStatus(itineraryOpt, routeSpecification)
@@ -60,9 +60,13 @@ final class Delivery private (
    * Snapshot reflecting only a routing change — no new handling, but the
    * itinerary or specification has changed.
    */
-  def updateOnRouting(spec: RouteSpecification, itinerary: Option[Itinerary]): Delivery =
+  def updateOnRouting(
+      spec: RouteSpecification,
+      itinerary: Option[Itinerary],
+      now: Instant = Instant.now()
+  ): Delivery =
     Objects.requireNonNull(spec, "Route specification is required")
-    new Delivery(lastEvent, itinerary, spec)
+    new Delivery(lastEvent, itinerary, spec, now)
 
   override def sameValueAs(other: Delivery): Boolean =
     other != null &&
@@ -96,15 +100,20 @@ final class Delivery private (
 
 object Delivery:
 
-  /** Builds a new snapshot from the cargo's current handling history. */
+  /** Builds a new snapshot from the cargo's current handling history.
+    *
+    * `now` defaults to `Instant.now()`; pass an explicit value (e.g. a
+    * fixed test clock) when deterministic `calculatedAt` matters.
+    */
   def derivedFrom(
       routeSpecification: RouteSpecification,
       itinerary: Option[Itinerary],
-      handlingHistory: HandlingHistory
+      handlingHistory: HandlingHistory,
+      now: Instant = Instant.now()
   ): Delivery =
     Objects.requireNonNull(routeSpecification, "Route specification is required")
     Objects.requireNonNull(handlingHistory, "Delivery history is required")
-    new Delivery(handlingHistory.mostRecentlyCompletedEvent, itinerary, routeSpecification)
+    new Delivery(handlingHistory.mostRecentlyCompletedEvent, itinerary, routeSpecification, now)
 
   private def calculateTransportStatus(last: Option[HandlingEvent]): TransportStatus =
     last match
