@@ -33,15 +33,22 @@ jobs:
           distribution: temurin
           java-version: ${{ matrix.java }}
 
-      - name: Set up Mill via Coursier
-        # Pin to the same version as .mill-version. The coursier-setup
-        # action's default `mill` resolves to 0.11.x, which silently fails
-        # to honour `.mill-version` and looks for the old `build.sc`
-        # filename instead of `build.mill`. Bump both sides together when
-        # upgrading Mill.
-        uses: coursier/setup-action@v1
-        with:
-          apps: mill:1.1.6
+      - name: Install Mill
+        # Mill 1.x ships as the `mill-dist` artifact on Maven Central
+        # (same path Homebrew uses). The coursier-setup action's bundled
+        # `mill` apps definition still maps to the legacy 0.11.x
+        # `com.lihaoyi::mill-dev` which has no 1.x build, so we bypass
+        # coursier-setup and curl the launcher directly. Pin to the
+        # version recorded in `.mill-version`.
+        run: |
+          set -euo pipefail
+          MILL_VERSION="$(cat .mill-version)"
+          mkdir -p "$HOME/.local/bin"
+          curl -fL \
+            "https://repo1.maven.org/maven2/com/lihaoyi/mill-dist/${MILL_VERSION}/mill-dist-${MILL_VERSION}.exe" \
+            -o "$HOME/.local/bin/mill"
+          chmod +x "$HOME/.local/bin/mill"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Cache Mill + Coursier
         uses: actions/cache@v4
