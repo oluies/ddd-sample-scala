@@ -1,52 +1,39 @@
 package se.citerus.dddsample.domain.model.cargo
 
+import java.time.Instant
+
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-import se.citerus.dddsample.application.util.DateTestUtil
-import se.citerus.dddsample.domain.model.location.SampleLocations.*
-import se.citerus.dddsample.domain.model.voyage.{VoyageBuilder, VoyageNumber}
+import se.citerus.dddsample.domain.model.location.{Location, UnLocode}
 
-class RouteSpecificationTest extends AnyFunSuite with Matchers with DateTestUtil {
+class RouteSpecificationTest extends AnyFunSuite with Matchers:
 
-  private val hongKongTokyoNewYork = new VoyageBuilder(new VoyageNumber("V001"), HONGKONG)
-    .addMovement(TOKYO, toDate("2009-02-01"), toDate("2009-02-05"))
-    .addMovement(NEWYORK, toDate("2009-02-06"), toDate("2009-02-10"))
-    .addMovement(HONGKONG, toDate("2009-02-11"), toDate("2009-02-14"))
-    .build()
+  private val HONGKONG = Location(UnLocode("HKHKG"), "Hong Kong")
+  private val CHICAGO  = Location(UnLocode("USCHI"), "Chicago")
+  private val deadline = Instant.parse("2026-06-01T00:00:00Z")
 
-  private val dallasNewYorkChicago = new VoyageBuilder(new VoyageNumber("V002"), DALLAS)
-    .addMovement(NEWYORK, toDate("2009-02-06"), toDate("2009-02-07"))
-    .addMovement(CHICAGO, toDate("2009-02-12"), toDate("2009-02-20"))
-    .build()
-
-  // TODO: it shouldn't be possible to create Legs that have load/unload
-  // locations and/or dates that don't match the voyage's carrier movements.
-  private val itinerary = Itinerary(
-    List(
-      new Leg(hongKongTokyoNewYork, HONGKONG, NEWYORK, toDate("2009-02-01"), toDate("2009-02-10")),
-      new Leg(dallasNewYorkChicago, NEWYORK, CHICAGO, toDate("2009-02-12"), toDate("2009-02-20"))
-    )
-  )
-
-  test("isSatisfiedBy: success") {
-    val routeSpecification = new RouteSpecification(HONGKONG, CHICAGO, toDate("2009-03-01"))
-    routeSpecification.isSatisfiedBy(itinerary) shouldBe true
+  test("constructor rejects null arguments") {
+    a[NullPointerException] should be thrownBy
+      RouteSpecification(null, CHICAGO, deadline)
+    a[NullPointerException] should be thrownBy
+      RouteSpecification(HONGKONG, null, deadline)
+    a[NullPointerException] should be thrownBy
+      RouteSpecification(HONGKONG, CHICAGO, null)
   }
 
-  test("isSatisfiedBy: wrong origin") {
-    val routeSpecification = new RouteSpecification(HANGZHOU, CHICAGO, toDate("2009-03-01"))
-    routeSpecification.isSatisfiedBy(itinerary) shouldBe false
+  test("constructor rejects same origin and destination") {
+    an[IllegalArgumentException] should be thrownBy
+      RouteSpecification(HONGKONG, HONGKONG, deadline)
   }
 
-  test("isSatisfiedBy: wrong destination") {
-    val routeSpecification = new RouteSpecification(HONGKONG, DALLAS, toDate("2009-03-01"))
-    routeSpecification.isSatisfiedBy(itinerary) shouldBe false
+  test("isSatisfiedBy rejects a null itinerary") {
+    RouteSpecification(HONGKONG, CHICAGO, deadline).isSatisfiedBy(null) shouldBe false
   }
 
-  test("isSatisfiedBy: missed deadline") {
-    val routeSpecification = new RouteSpecification(HONGKONG, CHICAGO, toDate("2009-02-15"))
-    routeSpecification.isSatisfiedBy(itinerary) shouldBe false
+  test("equality is by-value") {
+    val a = RouteSpecification(HONGKONG, CHICAGO, deadline)
+    val b = RouteSpecification(HONGKONG, CHICAGO, deadline)
+    a shouldEqual b
+    a.sameValueAs(b) shouldBe true
   }
-
-}

@@ -1,58 +1,62 @@
 package se.citerus.dddsample.domain.model.voyage
 
-import java.util.Date
+import java.time.Instant
+import java.util.Objects
 
-import org.apache.commons.lang3.Validate
+import scala.collection.mutable
 
 import se.citerus.dddsample.domain.model.location.Location
-import se.citerus.dddsample.domain.shared.Entity
-
-object Voyage {
-  // Null object pattern
-  val NONE: Voyage = new Voyage(new VoyageNumber(""), Schedule.EMPTY)
-}
-
-class Voyage(val voyageNumber: VoyageNumber, val schedule: Schedule) extends Entity[Voyage] {
-  Validate.notNull(voyageNumber, "Voyage number is required")
-  Validate.notNull(schedule, "Schedule is required")
-
-  override def equals(other: Any): Boolean = other match {
-    case other: Voyage => other.getClass == getClass && sameIdentityAs(other)
-    case _             => false
-  }
-
-  override def hashCode: Int = voyageNumber.hashCode()
-
-  override def sameIdentityAs(other: Voyage): Boolean =
-    other != null && voyageNumber.sameValueAs(other.voyageNumber)
-
-  override def toString(): String = "Voyage " + voyageNumber
-}
+import se.citerus.dddsample.domain.shared.DomainEntity
 
 /**
- * Builder pattern is used for incremental construction
- * of a Voyage aggregate. This serves as an aggregate factory.
+ * A Voyage aggregate.
+ *
+ * Pure domain entity — no JPA annotations. Identity is by [[VoyageNumber]];
+ * equality delegates to [[sameIdentityAs]].
  */
-class VoyageBuilder(
-    val voyageNumber: VoyageNumber,
-    var departureLocation: Location,
-    val carrierMovements: List[CarrierMovement] = List()
-) {
-  Validate.notNull(voyageNumber, "Voyage number is required")
-  Validate.notNull(departureLocation, "Departure location is required")
+final class Voyage(val voyageNumber: VoyageNumber, val schedule: Schedule)
+    extends DomainEntity[Voyage]:
+  Objects.requireNonNull(voyageNumber, "Voyage number is required")
+  Objects.requireNonNull(schedule, "Schedule is required")
 
-  def addMovement(
-      arrivalLocation: Location,
-      departureTime: Date,
-      arrivalTime: Date
-  ): VoyageBuilder = {
-    val newMovements = carrierMovements ::: List(
-      new CarrierMovement(departureLocation, arrivalLocation, departureTime, arrivalTime)
-    )
-    // Next departure location is the same as this arrival location
-    val builder = new VoyageBuilder(voyageNumber, arrivalLocation, newMovements)
-    builder
-  }
+  override def sameIdentityAs(other: Voyage): Boolean =
+    other != null && this.voyageNumber.sameValueAs(other.voyageNumber)
 
-  def build(): Voyage = new Voyage(voyageNumber, new Schedule(carrierMovements))
-}
+  override def equals(o: Any): Boolean = o match
+    case that: Voyage => sameIdentityAs(that)
+    case _            => false
+
+  override def hashCode: Int = voyageNumber.hashCode
+
+  override def toString: String = s"Voyage ${voyageNumber.idString}"
+
+object Voyage:
+
+  /**
+   * Builder for incremental construction of a [[Voyage]] aggregate. Serves
+   * as the aggregate factory.
+   */
+  final class Builder(voyageNumber: VoyageNumber, initialDepartureLocation: Location):
+    Objects.requireNonNull(voyageNumber, "Voyage number is required")
+    Objects.requireNonNull(initialDepartureLocation, "Departure location is required")
+
+    private val movements: mutable.ArrayBuffer[CarrierMovement] =
+      mutable.ArrayBuffer.empty
+    private var departureLocation: Location = initialDepartureLocation
+
+    def addMovement(
+        arrivalLocation: Location,
+        departureTime: Instant,
+        arrivalTime: Instant
+    ): Builder =
+      movements += CarrierMovement(
+        departureLocation,
+        arrivalLocation,
+        departureTime,
+        arrivalTime
+      )
+      // Next departure location is the same as this arrival location.
+      departureLocation = arrivalLocation
+      this
+
+    def build(): Voyage = new Voyage(voyageNumber, Schedule(movements.toList))

@@ -1,187 +1,177 @@
 package se.citerus.dddsample.domain.model.cargo
 
-import java.util.Date
+import java.time.Instant
+import java.util.Objects
 
-import org.apache.commons.lang3.Validate
-import org.apache.commons.lang3.builder.EqualsBuilder
-
-import se.citerus.dddsample.domain.model.handling.*
-import se.citerus.dddsample.domain.model.handling.HandlingEvent
-import se.citerus.dddsample.domain.model.handling.HandlingHistory
+import se.citerus.dddsample.domain.model.handling.{
+  HandlingEvent,
+  HandlingEventType,
+  HandlingHistory
+}
 import se.citerus.dddsample.domain.model.location.Location
 import se.citerus.dddsample.domain.model.voyage.Voyage
 import se.citerus.dddsample.domain.shared.ValueObject
 
 /**
- * The actual transportation of the cargo, as opposed to
- * the customer requirement (RouteSpecification) and the plan (Itinerary).
+ * The actual transportation state of a cargo, as opposed to the customer
+ * requirement ([[RouteSpecification]]) and the plan ([[Itinerary]]).
+ *
+ * Pure value object — replaced wholesale whenever routing or handling
+ * changes. Recomputes all derived state in the constructor.
  */
-class Delivery private (
+final class Delivery private (
     val lastEvent: Option[HandlingEvent],
-    itinerary: Itinerary,
-    routeSpecification: RouteSpecification
-) extends ValueObject[Delivery] {
-  val calculatedAt                     = new Date()
-  val transportStatus: TransportStatus = calculateTransportStatus
-  val misdirected                      = calculateMisdirectionStatus(itinerary)
-  val routingStatus                    = calculateRoutingStatus(itinerary, routeSpecification)
-  val lastKnownLocation                = calculateLastKnownLocation
-  val currentVoyage                    = calculateCurrentVoyage
-  val eta                              = calculateEta(itinerary)
-  val nextExpectedActivity  = calculateNextExpectedActivity(routeSpecification, itinerary)
-  val unloadedAtDestination = calculateUnloadedAtDestination(routeSpecification)
+    itineraryOpt: Option[Itinerary],
+    routeSpecification: RouteSpecification,
+    val calculatedAt: Instant
+) extends ValueObject[Delivery]:
 
-  def calculateTransportStatus: TransportStatus =
-    lastEvent match {
-      case None => NOT_RECEIVED
-      case Some(event) =>
-        event.eventType match {
-          case LOAD    => ONBOARD_CARRIER
-          case UNLOAD  => IN_PORT
-          case RECEIVE => IN_PORT
-          case CUSTOMS => IN_PORT
-          case CLAIM   => CLAIMED
-        }
-    }
-
-  private def calculateMisdirectionStatus(itinerary: Itinerary): Boolean =
-    lastEvent match {
-      case None        => false
-      case Some(event) => !itinerary.isExpected(event)
-    }
-
-  private def calculateRoutingStatus(
-      itinerary: Itinerary,
-      routeSpecification: RouteSpecification
-  ): RoutingStatus =
-    if (itinerary == null) {
-      NOT_ROUTED
-    } else {
-      if (routeSpecification.isSatisfiedBy(itinerary)) ROUTED
-      else MISROUTED
-    }
-
-  private def calculateLastKnownLocation: Option[Location] =
-    lastEvent.map(_.location)
-
-  private def calculateCurrentVoyage: Option[Voyage] =
-    lastEvent match {
-      case Some(event) if transportStatus.equals(ONBOARD_CARRIER) => Some(event.voyage)
-      case _                                                      => None
-    }
-
-  private def onTrack: Boolean =
-    routingStatus.equals(ROUTED) && !misdirected
-
-  private def calculateEta(itinerary: Itinerary): Option[Date] =
-    if (onTrack) Some(itinerary.finalArrivalDate())
+  val transportStatus: TransportStatus = Delivery.calculateTransportStatus(lastEvent)
+  val routingStatus: RoutingStatus =
+    Delivery.calculateRoutingStatus(itineraryOpt, routeSpecification)
+  val misdirected: Boolean = Delivery.calculateMisdirected(lastEvent, itineraryOpt)
+  val lastKnownLocationOpt: Option[Location] = lastEvent.map(_.location)
+  val currentVoyage: Option[Voyage] =
+    if transportStatus == TransportStatus.ONBOARD_CARRIER then lastEvent.flatMap(_.voyage)
     else None
+  val eta: Option[Instant] =
+    if isOnTrack then itineraryOpt.map(_.finalArrivalDate) else None
+  val nextExpectedActivity: Option[HandlingActivity] =
+    Delivery.calculateNextExpectedActivity(isOnTrack, lastEvent, routeSpecification, itineraryOpt)
+  val isUnloadedAtDestination: Boolean =
+    Delivery.calculateUnloadedAtDestination(lastEvent, routeSpecification)
 
-  private def calculateNextExpectedActivity(
-      routeSpecification: RouteSpecification,
-      itinerary: Itinerary
-  ): Option[HandlingActivity] = {
-    if (!onTrack) {
-      return None
-    }
+  def isMisdirected: Boolean = misdirected
 
-    val event = lastEvent.getOrElse {
-      return Some(new HandlingActivity(RECEIVE, routeSpecification.origin))
-    }
+  /** Last known location, or [[Location.UNKNOWN]] if no events received. */
+  def lastKnownLocation: Location = lastKnownLocationOpt.getOrElse(Location.UNKNOWN)
 
-    event.eventType match {
-      case LOAD =>
-        itinerary.legs.foreach { leg =>
-          if (leg.loadLocation.sameIdentityAs(event.location)) {
-            return Some(HandlingActivity(UNLOAD, leg.unloadLocation, Some(leg.voyage)))
-          }
-        }
-        None
-      case UNLOAD =>
-        val it = itinerary.legs.iterator
-        while (it.hasNext) {
-          val leg = it.next()
-          if (leg.unloadLocation.sameIdentityAs(event.location)) {
-            if (it.hasNext) {
-              val nextLeg = it.next()
-              return Some(HandlingActivity(LOAD, nextLeg.loadLocation, Some(nextLeg.voyage)))
-            } else {
-              return Some(HandlingActivity(CLAIM, leg.unloadLocation))
-            }
-          }
-        }
-        None
-      case RECEIVE =>
-        val firstLeg = itinerary.legs(0)
-        Some(HandlingActivity(LOAD, firstLeg.loadLocation, Some(firstLeg.voyage)))
-      case CLAIM   => None
-      case CUSTOMS => None
-    }
-  }
-
-  private def calculateUnloadedAtDestination(routeSpecification: RouteSpecification): Boolean =
-    lastEvent match {
-      case None => false
-      case Some(event) =>
-        UNLOAD.sameValueAs(event.eventType) &&
-        routeSpecification.destination.sameIdentityAs(event.location)
-    }
+  private def isOnTrack: Boolean = routingStatus == RoutingStatus.ROUTED && !misdirected
 
   /**
-   * Creates a new delivery snapshot to reflect changes in routing, i.e.
-   * when the route specification or the itinerary has changed
-   * but no additional handling of the cargo has been performed.
-   *
-   * @param routeSpecification route specification
-   * @param itinerary itinerary
-   * @return An up to date delivery
+   * Snapshot reflecting only a routing change — no new handling, but the
+   * itinerary or specification has changed.
    */
-  def updateOnRouting(routeSpecification: RouteSpecification, itinerary: Itinerary): Delivery = {
-    Validate.notNull(routeSpecification, "Route specification is required")
-    new Delivery(lastEvent, itinerary, routeSpecification)
-  }
+  def updateOnRouting(
+      spec: RouteSpecification,
+      itinerary: Option[Itinerary],
+      now: Instant = Instant.now()
+  ): Delivery =
+    Objects.requireNonNull(spec, "Route specification is required")
+    new Delivery(lastEvent, itinerary, spec, now)
 
-  def sameValueAs(other: Delivery): Boolean =
-    other != null && new EqualsBuilder()
-      .append(transportStatus, other.transportStatus)
-      .append(lastKnownLocation, other.lastKnownLocation)
-      .append(currentVoyage, other.currentVoyage)
-      .append(misdirected, other.misdirected)
-      .append(eta, other.eta)
-      .append(nextExpectedActivity, other.nextExpectedActivity)
-      .append(unloadedAtDestination, other.unloadedAtDestination)
-      .append(routingStatus, other.routingStatus)
-      .append(calculatedAt, other.calculatedAt)
-      .append(lastEvent, other.lastEvent)
-      .isEquals()
+  override def sameValueAs(other: Delivery): Boolean =
+    other != null &&
+      transportStatus == other.transportStatus &&
+      lastKnownLocationOpt == other.lastKnownLocationOpt &&
+      currentVoyage == other.currentVoyage &&
+      misdirected == other.misdirected &&
+      eta == other.eta &&
+      nextExpectedActivity == other.nextExpectedActivity &&
+      isUnloadedAtDestination == other.isUnloadedAtDestination &&
+      routingStatus == other.routingStatus &&
+      calculatedAt == other.calculatedAt &&
+      lastEvent == other.lastEvent
 
-  override def equals(other: Any): Boolean = other match {
-    case other: Delivery => other.getClass == getClass && sameValueAs(other)
-    case _               => false
-  }
-}
+  override def equals(o: Any): Boolean = o match
+    case that: Delivery => sameValueAs(that)
+    case _              => false
 
-object Delivery {
+  override def hashCode: Int =
+    var h = transportStatus.hashCode
+    h = 31 * h + lastKnownLocationOpt.hashCode
+    h = 31 * h + currentVoyage.hashCode
+    h = 31 * h + misdirected.hashCode
+    h = 31 * h + eta.hashCode
+    h = 31 * h + nextExpectedActivity.hashCode
+    h = 31 * h + isUnloadedAtDestination.hashCode
+    h = 31 * h + routingStatus.hashCode
+    h = 31 * h + calculatedAt.hashCode
+    h = 31 * h + lastEvent.hashCode
+    h
+
+object Delivery:
 
   /**
-   * Creates a new delivery snapshot based on the complete handling history of a cargo,
-   * as well as its route specification and itinerary.
+   * Builds a new snapshot from the cargo's current handling history.
    *
-   * @param routeSpecification route specification
-   * @param itinerary itinerary
-   * @param handlingHistory delivery history
-   * @return An up to date delivery.
+   * `now` defaults to `Instant.now()`; pass an explicit value (e.g. a
+   * fixed test clock) when deterministic `calculatedAt` matters.
    */
   def derivedFrom(
       routeSpecification: RouteSpecification,
-      itinerary: Itinerary,
-      handlingHistory: HandlingHistory
-  ): Delivery = {
-    Validate.notNull(routeSpecification, "Route specification is required")
-    Validate.notNull(handlingHistory, "Delivery history is required")
+      itinerary: Option[Itinerary],
+      handlingHistory: HandlingHistory,
+      now: Instant = Instant.now()
+  ): Delivery =
+    Objects.requireNonNull(routeSpecification, "Route specification is required")
+    Objects.requireNonNull(handlingHistory, "Delivery history is required")
+    new Delivery(handlingHistory.mostRecentlyCompletedEvent, itinerary, routeSpecification, now)
 
-    val lastEvent = handlingHistory.mostRecentlyCompletedEvent
-    new Delivery(lastEvent, itinerary, routeSpecification)
-  }
+  private def calculateTransportStatus(last: Option[HandlingEvent]): TransportStatus =
+    last match
+      case None => TransportStatus.NOT_RECEIVED
+      case Some(ev) =>
+        ev.eventType match
+          case HandlingEventType.LOAD    => TransportStatus.ONBOARD_CARRIER
+          case HandlingEventType.UNLOAD  => TransportStatus.IN_PORT
+          case HandlingEventType.RECEIVE => TransportStatus.IN_PORT
+          case HandlingEventType.CUSTOMS => TransportStatus.IN_PORT
+          case HandlingEventType.CLAIM   => TransportStatus.CLAIMED
 
-}
+  private def calculateRoutingStatus(
+      itinerary: Option[Itinerary],
+      spec: RouteSpecification
+  ): RoutingStatus =
+    itinerary match
+      case None => RoutingStatus.NOT_ROUTED
+      case Some(i) =>
+        if spec.isSatisfiedBy(i) then RoutingStatus.ROUTED else RoutingStatus.MISROUTED
+
+  private def calculateMisdirected(
+      last: Option[HandlingEvent],
+      itinerary: Option[Itinerary]
+  ): Boolean =
+    (last, itinerary) match
+      case (Some(ev), Some(i)) => !i.isExpected(ev)
+      case _                   => false
+
+  private def calculateUnloadedAtDestination(
+      last: Option[HandlingEvent],
+      spec: RouteSpecification
+  ): Boolean =
+    last.exists(ev =>
+      ev.eventType == HandlingEventType.UNLOAD &&
+        spec.destination.sameIdentityAs(ev.location)
+    )
+
+  private def calculateNextExpectedActivity(
+      onTrack: Boolean,
+      last: Option[HandlingEvent],
+      spec: RouteSpecification,
+      itinerary: Option[Itinerary]
+  ): Option[HandlingActivity] =
+    if !onTrack then None
+    else
+      last match
+        case None => Some(HandlingActivity(HandlingEventType.RECEIVE, spec.origin))
+        case Some(ev) =>
+          val legs = itinerary.map(_.legs).getOrElse(Nil)
+          ev.eventType match
+            case HandlingEventType.LOAD =>
+              legs
+                .find(_.loadLocation.sameIdentityAs(ev.location))
+                .map(l => HandlingActivity(HandlingEventType.UNLOAD, l.unloadLocation, l.voyage))
+            case HandlingEventType.UNLOAD =>
+              val idx = legs.indexWhere(_.unloadLocation.sameIdentityAs(ev.location))
+              if idx < 0 then None
+              else if idx == legs.length - 1 then
+                Some(HandlingActivity(HandlingEventType.CLAIM, legs(idx).unloadLocation))
+              else
+                val nextLeg = legs(idx + 1)
+                Some(HandlingActivity(HandlingEventType.LOAD, nextLeg.loadLocation, nextLeg.voyage))
+            case HandlingEventType.RECEIVE =>
+              legs.headOption.map(l =>
+                HandlingActivity(HandlingEventType.LOAD, l.loadLocation, l.voyage)
+              )
+            case HandlingEventType.CLAIM | HandlingEventType.CUSTOMS => None

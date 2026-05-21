@@ -1,27 +1,29 @@
 package se.citerus.dddsample.interfaces.booking.facade
 
-import java.util.Date
+import java.time.Instant
 
-import se.citerus.dddsample.interfaces.booking.facade.dto.CargoRoutingDTO
-import se.citerus.dddsample.interfaces.booking.facade.dto.LocationDTO
-import se.citerus.dddsample.interfaces.booking.facade.dto.RouteCandidateDTO;
+import se.citerus.dddsample.interfaces.booking.facade.dto.{
+  CargoRoutingDTO,
+  LocationDTO,
+  RouteCandidateDTO
+}
 
 /**
- * This facade shields the domain layer - model, services, repositories -
- * from concerns about such things as the user interface and remoting.
+ * Shields the domain layer from UI / remoting concerns. All arguments and
+ * results are primitive Strings or DTOs.
  */
-trait BookingServiceFacade {
-  def bookNewCargo(origin: String, destination: String, arrivalDeadline: Date): String;
+trait BookingServiceFacade:
+
+  def bookNewCargo(origin: String, destination: String, arrivalDeadline: Instant): String
 
   def loadCargoForRouting(trackingId: String): CargoRoutingDTO
 
-  def assignCargoToRoute(trackingId: String, route: RouteCandidateDTO): Unit;
+  def assignCargoToRoute(trackingId: String, route: RouteCandidateDTO): Unit
 
-  def changeDestination(trackingId: String, destinationUnLocode: String): Unit;
+  def changeDestination(trackingId: String, destinationUnLocode: String): Unit
 
   def requestPossibleRoutesForCargo(trackingId: String): List[RouteCandidateDTO]
 
   def listShippingLocations(): List[LocationDTO]
 
   def listAllCargos(): List[CargoRoutingDTO]
-}

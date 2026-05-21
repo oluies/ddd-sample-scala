@@ -1,20 +1,18 @@
 package se.citerus.dddsample.domain.model.voyage
 
-import se.citerus.dddsample.domain.shared.ValueObject
+/**
+ * Identifies a voyage.
+ *
+ * Opaque type over `String` (D2). The upstream Java reference requires only
+ * non-null (no pattern check), so the smart constructor mirrors that.
+ */
+opaque type VoyageNumber = String
 
-class VoyageNumber(val number: String) extends ValueObject[VoyageNumber] {
+object VoyageNumber:
+  def apply(number: String): VoyageNumber =
+    require(number != null, "voyage number must not be null")
+    number
 
-  def idString = number
-
-  override def sameValueAs(other: VoyageNumber): Boolean =
-    other != null && number.equals(other.number)
-
-  override def equals(other: Any): Boolean = other match {
-    case other: VoyageNumber => other.getClass == getClass && sameValueAs(other)
-    case _                   => false
-  }
-
-  override def hashCode: Int = number.hashCode()
-
-  override def toString: String = number
-}
+  extension (v: VoyageNumber)
+    def idString: String                          = v
+    def sameValueAs(other: VoyageNumber): Boolean = v == other

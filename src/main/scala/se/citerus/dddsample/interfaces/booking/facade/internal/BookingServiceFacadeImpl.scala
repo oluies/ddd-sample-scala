@@ -1,79 +1,62 @@
 package se.citerus.dddsample.interfaces.booking.facade.internal
 
-import java.util.Date
+import java.time.Instant
 
-import scala.beans.BeanProperty
+import org.springframework.stereotype.Service
 
-import org.apache.commons.logging.Log
-import org.apache.commons.logging.LogFactory
-
-import se.citerus.dddsample.application._
-import se.citerus.dddsample.domain.model.cargo._
-import se.citerus.dddsample.domain.model.location._
-import se.citerus.dddsample.domain.model.voyage._
+import se.citerus.dddsample.application.BookingService
+import se.citerus.dddsample.domain.model.cargo.{CargoRepository, TrackingId}
+import se.citerus.dddsample.domain.model.location.{LocationRepository, UnLocode}
+import se.citerus.dddsample.domain.model.voyage.VoyageRepository
 import se.citerus.dddsample.interfaces.booking.facade.BookingServiceFacade
-import se.citerus.dddsample.interfaces.booking.facade.dto._
-import se.citerus.dddsample.interfaces.booking.facade.internal.assembler._
-
-class BookingServiceFacadeImpl extends BookingServiceFacade {
-  var bookingService: BookingService         = _
-  var locationRepository: LocationRepository = _
-  var cargoRepository: CargoRepository       = _
-  var voyageRepository: VoyageRepository     = _
-
-  val logger = LogFactory.getLog(getClass());
-
-  override def listShippingLocations(): List[LocationDTO] = {
-    val allLocations = locationRepository.findAll()
-    LocationDTOAssembler.toDTOList(allLocations)
-  }
-
-  def bookNewCargo(origin: String, destination: String, arrivalDeadline: Date): String = {
-    val trackingId = bookingService.bookNewCargo(
-      new UnLocode(origin),
-      new UnLocode(destination),
-      arrivalDeadline
-    );
-    return trackingId.idString;
-  }
-
-  def loadCargoForRouting(trackingId: String): CargoRoutingDTO = {
-    val o: Option[Cargo] = cargoRepository.find(new TrackingId(trackingId))
-    val cargo: Cargo     = o.getOrElse(throw new RuntimeException("Not found"));
-    return CargoRoutingDTOAssembler.toDTO(cargo);
-  }
-
-  def assignCargoToRoute(trackingIdStr: String, routeCandidateDTO: RouteCandidateDTO) = {
-    val itinerary = ItineraryCandidateDTOAssembler.fromDTO(
-      routeCandidateDTO,
-      voyageRepository,
-      locationRepository
-    );
-    val trackingId = new TrackingId(trackingIdStr);
-
-    bookingService.assignCargoToRoute(itinerary, trackingId);
-  }
-
-  def changeDestination(trackingId: String, destinationUnLocode: String) =
-    bookingService.changeDestination(new TrackingId(trackingId), new UnLocode(destinationUnLocode));
-
-  def listAllCargos(): List[CargoRoutingDTO] = {
-    val cargoList                      = cargoRepository.findAll();
-    var dtoList: List[CargoRoutingDTO] = List();
-    for (cargo <- cargoList)
-      dtoList = CargoRoutingDTOAssembler.toDTO(cargo) :: dtoList
-    return dtoList;
-  }
-
-  def requestPossibleRoutesForCargo(trackingId: String): List[RouteCandidateDTO] = {
-    val itineraries: List[Itinerary] =
-      bookingService.requestPossibleRoutesForCargo(new TrackingId(trackingId));
-
-    var routeCandidates: List[RouteCandidateDTO] = List()
-    for (itinerary <- itineraries)
-      routeCandidates = ItineraryCandidateDTOAssembler.toDTO(itinerary) :: routeCandidates
-
-    return routeCandidates;
-  }
-
+import se.citerus.dddsample.interfaces.booking.facade.dto.{
+  CargoRoutingDTO,
+  LocationDTO,
+  RouteCandidateDTO
 }
+import se.citerus.dddsample.interfaces.booking.facade.internal.assembler.{
+  CargoRoutingDTOAssembler,
+  ItineraryCandidateDTOAssembler,
+  LocationDTOAssembler
+}
+
+@Service
+final class BookingServiceFacadeImpl(
+    bookingService: BookingService,
+    locationRepository: LocationRepository,
+    cargoRepository: CargoRepository,
+    voyageRepository: VoyageRepository
+) extends BookingServiceFacade:
+
+  private val locationAssembler  = new LocationDTOAssembler
+  private val cargoAssembler     = new CargoRoutingDTOAssembler
+  private val itineraryAssembler = new ItineraryCandidateDTOAssembler
+
+  override def listShippingLocations(): List[LocationDTO] =
+    locationAssembler.toDTOList(locationRepository.getAll())
+
+  override def bookNewCargo(origin: String, destination: String, arrivalDeadline: Instant): String =
+    bookingService.bookNewCargo(UnLocode(origin), UnLocode(destination), arrivalDeadline).idString
+
+  override def loadCargoForRouting(trackingId: String): CargoRoutingDTO =
+    val cargo = cargoRepository
+      .find(TrackingId(trackingId))
+      .getOrElse(
+        throw new NoSuchElementException(s"Unknown cargo $trackingId")
+      )
+    cargoAssembler.toDTO(cargo)
+
+  override def assignCargoToRoute(trackingIdStr: String, route: RouteCandidateDTO): Unit =
+    val itinerary = itineraryAssembler.fromDTO(route, voyageRepository, locationRepository)
+    bookingService.assignCargoToRoute(itinerary, TrackingId(trackingIdStr))
+
+  override def changeDestination(trackingId: String, destinationUnLocode: String): Unit =
+    bookingService.changeDestination(TrackingId(trackingId), UnLocode(destinationUnLocode))
+
+  override def listAllCargos(): List[CargoRoutingDTO] =
+    cargoRepository.getAll.map(cargoAssembler.toDTO)
+
+  override def requestPossibleRoutesForCargo(trackingId: String): List[RouteCandidateDTO] =
+    bookingService
+      .requestPossibleRoutesForCargo(TrackingId(trackingId))
+      .map(itineraryAssembler.toDTO)

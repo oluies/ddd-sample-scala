@@ -1,31 +1,19 @@
 package se.citerus.dddsample.domain.model.cargo
 
-trait CargoRepository {
+/** Repository for the [[Cargo]] aggregate. */
+trait CargoRepository:
 
   /**
-   * Finds a cargo using given id.
-   *
-   * @param trackingId Id
-   * @return Cargo if found, else   { @code null }
+   * Finds a cargo by tracking id. `None` if not found (upstream Java returns
+   * nullable `Cargo`).
    */
   def find(trackingId: TrackingId): Option[Cargo]
 
-  /**
-   * Finds all cargo.
-   *
-   * @return All cargo.
-   */
-  def findAll(): List[Cargo]
+  /** Returns all cargo. */
+  def getAll: List[Cargo]
 
-  /**
-   * Saves given cargo.
-   *
-   * @param cargo cargo to save
-   */
+  /** Persists the given cargo. */
   def store(cargo: Cargo): Unit
 
-  /**
-   * @return A unique, generated tracking Id.
-   */
+  /** Generates a fresh, unique tracking id. */
   def nextTrackingId(): TrackingId
-}

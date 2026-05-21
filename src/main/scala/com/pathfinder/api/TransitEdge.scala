@@ -1,15 +1,21 @@
 package com.pathfinder.api
 
-import java.util.Date
+import java.io.Serializable
+import java.time.Instant
 
 /**
- * Represents an edge in a path through a graph,
- * describing the route of a cargo.
+ * An edge in a path through the routing graph — one leg of a transit path.
+ *
+ * Belongs to the *routing team's* bounded context. UN/LOCODEs and voyage
+ * numbers are plain `String`s here, deliberately so: the routing team
+ * doesn't know about our [[se.citerus.dddsample.domain.model.location.UnLocode]]
+ * value object. The translation happens in
+ * [[se.citerus.dddsample.infrastructure.routing.ExternalRoutingService]].
  */
-case class TransitEdge(
-    val voyageNumber: String,
-    val fromUnLocode: String,
-    val toUnLocode: String,
-    val fromDate: Date,
-    val toDate: Date
-) extends java.io.Serializable {}
+final case class TransitEdge(
+    edge: String,     // voyage number
+    fromNode: String, // UN/LOCODE of origin
+    toNode: String,   // UN/LOCODE of destination
+    fromDate: Instant,
+    toDate: Instant
+) extends Serializable

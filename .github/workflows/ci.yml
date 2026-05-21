@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [master, "task*/**"]
+    branches: [master, "task*/**", "rewrite/**"]
   pull_request:
     branches: [master]
   workflow_dispatch:
@@ -16,14 +16,13 @@ permissions:
 
 jobs:
   build:
-    name: sbt test (Java ${{ matrix.java }})
+    name: mill test (Java ${{ matrix.java }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        # Java 17 is the baseline for Spring 5 / Hibernate 5 / CXF 3 on
-        # Scala 3. Add 21 once dependencies are confirmed-clean on it.
-        java: ["17"]
+        # Java 21 is the baseline for Spring Boot 3.3 / Jakarta EE / Hibernate 6.
+        java: ["21"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,33 +33,47 @@ jobs:
           distribution: temurin
           java-version: ${{ matrix.java }}
 
-      - name: Set up sbt
-        uses: sbt/setup-sbt@v1
+      - name: Install Mill
+        # Mill 1.x ships as the `mill-dist` artifact on Maven Central
+        # (same path Homebrew uses). The coursier-setup action's bundled
+        # `mill` apps definition still maps to the legacy 0.11.x
+        # `com.lihaoyi::mill-dev` which has no 1.x build, so we bypass
+        # coursier-setup and curl the launcher directly. Pin to the
+        # version recorded in `.mill-version`.
+        run: |
+          set -euo pipefail
+          MILL_VERSION="$(cat .mill-version)"
+          mkdir -p "$HOME/.local/bin"
+          curl -fL \
+            "https://repo1.maven.org/maven2/com/lihaoyi/mill-dist/${MILL_VERSION}/mill-dist-${MILL_VERSION}.exe" \
+            -o "$HOME/.local/bin/mill"
+          chmod +x "$HOME/.local/bin/mill"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      - name: Cache sbt
+      - name: Cache Mill + Coursier
         uses: actions/cache@v4
         with:
           path: |
-            ~/.sbt
-            ~/.ivy2/cache
+            ~/.cache/mill
             ~/.cache/coursier
-          key: ${{ runner.os }}-sbt-${{ hashFiles('**/*.sbt', 'project/build.properties', 'project/plugins.sbt') }}
+          key: ${{ runner.os }}-mill-${{ hashFiles('**/build.mill', '.mill-version') }}
           restore-keys: |
-            ${{ runner.os }}-sbt-
+            ${{ runner.os }}-mill-
 
       - name: Show toolchain versions
         run: |
           java -version
-          sbt --version
+          mill --version
 
       - name: Compile
-        run: sbt -v "compile; Test/compile"
+        run: mill ddd.compile + ddd.test.compile
 
       - name: Test
-        run: sbt -v test
+        if: hashFiles('src/test/scala/**/*.scala') != ''
+        run: mill ddd.test
 
       - name: Check formatting
-        run: sbt scalafmtCheckAll
+        run: mill __.checkFormat
 
       - name: Upload test reports
         if: always()
@@ -68,7 +81,7 @@ jobs:
         with:
           name: test-reports-java-${{ matrix.java }}
           path: |
-            target/test-reports/**
-            target/scala-*/test-reports/**
+            out/ddd/test/test-report.xml
+            out/ddd/test/test-classes/**/*-output.txt
           if-no-files-found: ignore
           retention-days: 14

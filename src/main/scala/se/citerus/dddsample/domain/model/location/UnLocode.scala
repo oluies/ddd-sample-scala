@@ -2,35 +2,43 @@ package se.citerus.dddsample.domain.model.location
 
 import java.util.regex.Pattern
 
-import se.citerus.dddsample.domain.shared.ValueObject
-
 /**
  * United nations location code.
- * <p/>
- * http://www.unece.org/cefact/locode/
- * http://www.unece.org/cefact/locode/DocColumnDescription.htm#LOCODE
+ *
+ *   - http://www.unece.org/cefact/locode/
+ *   - http://www.unece.org/cefact/locode/DocColumnDescription.htm#LOCODE
+ *
+ * Country code is exactly two letters; location code is usually three letters
+ * but may contain the numbers 2-9 as well.
+ *
+ * Opaque type over `String` (D2): zero-allocation wrapper with smart
+ * constructor enforcing the UN/LOCODE pattern. Equality and hashCode come
+ * from the underlying `String`.
  */
-class UnLocode(val countryAndLocation: String) extends ValueObject[UnLocode] {
-  // Location code is usually three letters, but may contain the numbers 2-9 as well
-  private val VALID_PATTERN = Pattern.compile("[a-zA-Z]{2}[a-zA-Z2-9]{3}")
+opaque type UnLocode = String
 
-  require(countryAndLocation != null, "Country and location may not be null")
-  require(
-    VALID_PATTERN.matcher(countryAndLocation).matches(),
-    countryAndLocation + " is not a valid UN/LOCODE (does not match pattern)"
-  )
+object UnLocode:
 
-  val idString = countryAndLocation.toUpperCase()
+  private val ValidPattern: Pattern =
+    Pattern.compile("[a-zA-Z]{2}[a-zA-Z2-9]{3}")
 
-  override def equals(other: Any): Boolean = other match {
-    case other: UnLocode => other.getClass == getClass && sameValueAs(other)
-    case _               => false
-  }
+  /**
+   * Smart constructor. Throws [[IllegalArgumentException]] (which extends
+   * [[RuntimeException]]) on null or invalid input; the upstream Java code
+   * uses [[NullPointerException]] for null, but Scala's `require` makes
+   * `IllegalArgumentException` more idiomatic.
+   */
+  def apply(countryAndLocation: String): UnLocode =
+    require(countryAndLocation != null, "Country and location may not be null")
+    require(
+      ValidPattern.matcher(countryAndLocation).matches(),
+      s"$countryAndLocation is not a valid UN/LOCODE (does not match pattern)"
+    )
+    countryAndLocation.toUpperCase
 
-  override def hashCode = idString.hashCode
+  extension (u: UnLocode)
+    /** Country code and location code concatenated, always upper case. */
+    def idString: String = u
 
-  def sameValueAs(other: UnLocode): Boolean =
-    other != null && this.idString.equals(other.idString)
-
-  override def toString() = idString
-}
+    /** Value-equality semantics from the [[ValueObject]] contract. */
+    def sameValueAs(other: UnLocode): Boolean = u == other

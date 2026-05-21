@@ -1,20 +1,18 @@
 package se.citerus.dddsample.domain.model.location
 
-trait LocationRepository {
+/** Repository for [[Location]] aggregates. */
+trait LocationRepository:
 
   /**
-   * Finds a location using given unlocode.
+   * Finds a location by UN Locode.
    *
-   * @param unLocode UNLocode.
-   * @return Location.
+   * Returns `None` if not found (the upstream Java reference returns the
+   * raw `Location`, possibly `null`; Scala uses `Option`).
    */
   def find(unLocode: UnLocode): Option[Location]
 
-  /**
-   * Finds all locations.
-   *
-   * @return All locations.
-   */
-  def findAll(): List[Location]
+  /** @return all known locations. */
+  def getAll(): List[Location]
 
-}
+  /** Persists a new or updated location and returns it. */
+  def store(location: Location): Location

@@ -1,118 +1,68 @@
 package se.citerus.dddsample.domain.model.cargo
 
-import java.util.Date
+import java.time.Instant
+import java.util.Objects
 
-import se.citerus.dddsample.domain.model.handling.HandlingEvent
+import se.citerus.dddsample.domain.model.handling.{HandlingEvent, HandlingEventType}
 import se.citerus.dddsample.domain.model.location.Location
 import se.citerus.dddsample.domain.shared.ValueObject
 
-object Itinerary {
-  val EMPTY_ITINERARY: Itinerary = new Itinerary()
-  val END_OF_DAYS: Date          = new Date(Long.MaxValue)
-
-  def apply(legs: List[Leg]) = {
-    require(!legs.isEmpty, "legs cannot be empty")
-    require(!legs.exists(_ == null), "no null elements allowed in list")
-
-    new Itinerary(legs)
-  }
-}
-
 /**
- * An itinerary.
+ * An itinerary — an ordered, non-empty list of [[Leg]]s describing the
+ * route a cargo follows from origin to destination. The `apply` factory
+ * rejects null, empty, and null-containing leg lists, and the private
+ * constructor seals the invariant.
+ *
+ * A `Cargo` without a route exposes `Option[Itinerary]` (`Cargo.itineraryOpt`)
+ * directly — there is no longer a `Itinerary.EMPTY` sentinel.
  */
-class Itinerary(val legs: List[Leg] = List()) extends ValueObject[Itinerary] {
+final class Itinerary private (val legs: List[Leg]) extends ValueObject[Itinerary]:
 
   /**
-   * Test if the given handling event is expected when executing this itinerary.
-   *
-   * @param event Event to test.
-   * @return <code>true</code> if the event is expected
+   * True if `event` is consistent with this itinerary. CUSTOMS events are
+   * always accepted; the empty itinerary accepts every event.
    */
-  def isExpected(event: HandlingEvent): Boolean = {
-    import se.citerus.dddsample.domain.model.handling.*
-    if (legs.isEmpty) {
-      return true
-    }
+  def isExpected(event: HandlingEvent): Boolean =
+    if legs.isEmpty then true
+    else
+      event.eventType match
+        case HandlingEventType.RECEIVE =>
+          legs.head.loadLocation == event.location
+        case HandlingEventType.LOAD =>
+          legs.exists(l =>
+            l.loadLocation.sameIdentityAs(event.location) &&
+              event.voyage.exists(v => l.voyage.sameIdentityAs(v))
+          )
+        case HandlingEventType.UNLOAD =>
+          legs.exists(l => l.unloadLocation == event.location && event.voyage.contains(l.voyage))
+        case HandlingEventType.CLAIM =>
+          lastLeg.exists(_.unloadLocation == event.location)
+        case HandlingEventType.CUSTOMS => true
 
-    event.eventType match {
-      case RECEIVE =>
-        // Check that the first leg's origin is the event's location
-        val leg: Leg = legs(0)
-        leg.loadLocation.equals(event.location)
-      case LOAD =>
-        // Check that the there is one leg with same load location and voyage
-        legs.exists { leg =>
-          leg.loadLocation.sameIdentityAs(event.location) &&
-          leg.voyage.sameIdentityAs(event.voyage)
-        }
-      case UNLOAD =>
-        // Check that the there is one leg with same unload location and voyage
-        legs.exists { leg =>
-          leg.unloadLocation.equals(event.location) &&
-          leg.voyage.equals(event.voyage)
-        }
-      case CLAIM =>
-        // Check that the last leg's destination is from the event's location
-        val leg: Leg = lastLeg
-        leg.unloadLocation.equals(event.location)
-      case CUSTOMS =>
-        true
-    }
-  }
+  def initialDepartureLocation: Location =
+    legs.headOption.map(_.loadLocation).getOrElse(Location.UNKNOWN)
 
-  /**
-   * @return The initial departure location.
-   */
-  def initialDepartureLocation(): Location =
-    if (legs.isEmpty) {
-      Location.UNKNOWN
-    } else {
-      legs(0).loadLocation
-    }
+  def finalArrivalLocation: Location =
+    lastLeg.map(_.unloadLocation).getOrElse(Location.UNKNOWN)
 
-  def finalArrivalLocation(): Location =
-    if (legs.isEmpty) {
-      Location.UNKNOWN
-    } else {
-      lastLeg.unloadLocation
-    }
+  def finalArrivalDate: Instant =
+    lastLeg.map(_.unloadTime).getOrElse(Instant.MAX)
 
-  /**
-   * @return Date when cargo arrives at final destination.
-   */
-  def finalArrivalDate(): Date =
-    if (lastLeg == null) {
-      new Date(Itinerary.END_OF_DAYS.getTime())
-    } else {
-      new Date(lastLeg.unloadTime().getTime())
-    }
+  def lastLeg: Option[Leg] = legs.lastOption
 
-  /**
-   * @return The last leg on the itinerary.
-   */
-  def lastLeg: Leg =
-    if (legs.isEmpty) {
-      null
-    } else {
-      legs(legs.size - 1)
-    }
-
-  /**
-   * @param other itinerary to compare
-   * @return <code>true</code> if the legs in this and the other itinerary are all equal.
-   */
   override def sameValueAs(other: Itinerary): Boolean =
-    other != null && legs.equals(other.legs)
+    other != null && this.legs == other.legs
 
-  /**
-   * @param other itinerary to compare
-   * @return <code>true</code> if the legs in this and the other itinerary are all equal.
-   */
-  override def equals(other: Any): Boolean = other match {
-    case other: Itinerary => other.getClass == getClass && sameValueAs(other)
-    case _                => false
-  }
+  override def equals(o: Any): Boolean = o match
+    case that: Itinerary => sameValueAs(that)
+    case _               => false
 
   override def hashCode: Int = legs.hashCode
-}
+
+object Itinerary:
+
+  def apply(legs: List[Leg]): Itinerary =
+    Objects.requireNonNull(legs, "legs must not be null")
+    require(!legs.contains(null), "legs must not contain null")
+    require(legs.nonEmpty, "legs must not be empty")
+    new Itinerary(legs)

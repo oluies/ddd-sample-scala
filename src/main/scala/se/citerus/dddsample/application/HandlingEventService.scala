@@ -1,37 +1,27 @@
-package se.citerus.dddsample.application;
+package se.citerus.dddsample.application
 
-import java.util.Date
+import java.time.Instant
 
 import se.citerus.dddsample.domain.model.cargo.TrackingId
-import se.citerus.dddsample.domain.model.handling.HandlingEvent
 import se.citerus.dddsample.domain.model.handling.HandlingEventType
 import se.citerus.dddsample.domain.model.location.UnLocode
-import se.citerus.dddsample.domain.model.voyage.VoyageNumber;
+import se.citerus.dddsample.domain.model.voyage.VoyageNumber
 
-/**
- * Handling event service.
- */
-trait HandlingEventService {
+/** Handling event service. */
+trait HandlingEventService:
 
   /**
-   * Registers a handling event in the system, and notifies interested
-   * parties that a cargo has been handled.
+   * Registers a handling event in the system and notifies interested parties
+   * that a cargo has been handled.
    *
-   * @param completionTime when the event was completed
-   * @param trackingId cargo tracking id
-   * @param voyageNumber voyage number
-   * @param unLocode UN locode for the location where the event occurred
-   * @param type type of event
-   * @throws se.citerus.dddsample.domain.model.handling.CannotCreateHandlingEventException
-   *  if a handling event that represents an actual event that's relevant to a cargo we're tracking
-   *  can't be created from the parameters
+   * Throws
+   * [[se.citerus.dddsample.domain.model.handling.CannotCreateHandlingEventException]]
+   * if the parameters don't represent a valid event we can track.
    */
   def registerHandlingEvent(
-      completionTime: Date,
+      completionTime: Instant,
       trackingId: TrackingId,
-      voyageNumber: VoyageNumber,
+      voyageNumber: Option[VoyageNumber],
       unLocode: UnLocode,
       eventType: HandlingEventType
-  ): Unit;
-
-}
+  ): Unit

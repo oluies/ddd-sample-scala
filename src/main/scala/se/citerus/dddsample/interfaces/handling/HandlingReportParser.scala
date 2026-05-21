@@ -1,80 +1,75 @@
 package se.citerus.dddsample.interfaces.handling
 
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.time.{Instant, LocalDateTime, ZoneOffset}
+import java.util.List as JList
 
-import scala.collection.mutable.ListBuffer
+import scala.jdk.CollectionConverters.*
 
-import com.aggregator.HandlingReport
-import org.apache.commons.lang3.StringUtils
-
+import se.citerus.dddsample.application.handling.HandlingEventRegistrationAttempt
 import se.citerus.dddsample.domain.model.cargo.TrackingId
 import se.citerus.dddsample.domain.model.handling.HandlingEventType
 import se.citerus.dddsample.domain.model.location.UnLocode
 import se.citerus.dddsample.domain.model.voyage.VoyageNumber
+import se.citerus.dddsample.interfaces.handling.ws.HandlingReport
 
-object HandlingReportParser {
-  val ISO_8601_FORMAT = "yyyy-MM-dd HH:mm"
+/**
+ * Utility for parsing incoming handling reports into
+ * [[HandlingEventRegistrationAttempt]]s.
+ */
+object HandlingReportParser:
 
-  def parseUnLocode(unlocode: String, errors: ListBuffer[String]): UnLocode = {
-    try
-      return new UnLocode(unlocode);
-    catch {
-      case e => errors.append(e.getMessage());
+  def parseUnLocode(unlocode: String): UnLocode =
+    try UnLocode(unlocode)
+    catch
+      case e @ (_: IllegalArgumentException | _: NullPointerException) =>
+        throw new IllegalArgumentException(s"Failed to parse UNLO code: $unlocode", e)
+
+  def parseTrackingId(trackingId: String): TrackingId =
+    try TrackingId(trackingId)
+    catch
+      case e @ (_: IllegalArgumentException | _: NullPointerException) =>
+        throw new IllegalArgumentException(s"Failed to parse trackingId: $trackingId", e)
+
+  /**
+   * Returns `None` for null or blank input — the upstream Java returns
+   * nullable `VoyageNumber` to signal "no voyage". Scala uses `Option`.
+   */
+  def parseVoyageNumber(voyageNumber: String): Option[VoyageNumber] =
+    if voyageNumber == null || voyageNumber.isBlank then None
+    else
+      try Some(VoyageNumber(voyageNumber))
+      catch
+        case e: IllegalArgumentException =>
+          throw new IllegalArgumentException(s"Failed to parse voyage number: $voyageNumber", e)
+
+  def parseEventType(eventType: String): HandlingEventType =
+    try HandlingEventType.valueOf(eventType)
+    catch
+      case _: IllegalArgumentException =>
+        throw new IllegalArgumentException(
+          s"$eventType is not a valid handling event type. Valid types are: ${HandlingEventType.values.mkString("[", ", ", "]")}"
+        )
+
+  def parseCompletionTime(completionTime: LocalDateTime): Instant =
+    if completionTime == null then throw new IllegalArgumentException("Completion time is required")
+    Instant.ofEpochSecond(completionTime.toEpochSecond(ZoneOffset.UTC))
+
+  def parseTrackingIds(trackingIdStrs: JList[String]): List[TrackingId] =
+    Option(trackingIdStrs).map(_.asScala.toList).getOrElse(Nil).map(parseTrackingId)
+
+  def parse(report: HandlingReport): List[HandlingEventRegistrationAttempt] =
+    val completion  = parseCompletionTime(report.completionTime)
+    val voyage      = parseVoyageNumber(report.voyageNumber)
+    val eventType   = parseEventType(report.`type`)
+    val unLocode    = parseUnLocode(report.unLocode)
+    val trackingIds = parseTrackingIds(report.trackingIds)
+    trackingIds.map { tid =>
+      HandlingEventRegistrationAttempt(
+        Instant.now(),
+        completion,
+        tid,
+        voyage,
+        eventType,
+        unLocode
+      )
     }
-    return null;
-  }
-
-  def parseTrackingId(trackingId: String, errors: ListBuffer[String]): TrackingId = {
-    try
-      return new TrackingId(trackingId);
-    catch {
-      case e => errors.append(e.getMessage());
-    }
-    return null;
-  }
-
-  def parseVoyageNumber(voyageNumber: String, errors: ListBuffer[String]): VoyageNumber = {
-    if (StringUtils.isNotEmpty(voyageNumber)) {
-      return null;
-    }
-
-    try
-      return new VoyageNumber(voyageNumber);
-    catch {
-      case e => errors.append(e.getMessage());
-    }
-    return null;
-  }
-
-  def parseDate(completionTime: String, errors: ListBuffer[String]): Date = {
-    try
-      return new SimpleDateFormat(ISO_8601_FORMAT).parse(completionTime);
-    catch {
-      case e =>
-        errors.append(
-          "Invalid date format: " + completionTime + ", must be on ISO 8601 format: " + ISO_8601_FORMAT
-        );
-    }
-    return null;
-  }
-
-  def parseEventType(eventType: String, errors: ListBuffer[String]): HandlingEventType = {
-    try
-      return HandlingEventType.valueOf(eventType);
-    catch {
-      case e => errors.append(eventType + " is not a valid handling event type.")
-    }
-    return null;
-  }
-
-  def parseCompletionTime(handlingReport: HandlingReport, errors: ListBuffer[String]): Date = {
-    val completionTime = handlingReport.completionTime;
-    if (completionTime == null) {
-      errors.append("Completion time is required");
-      return null;
-    }
-
-    return completionTime.toGregorianCalendar().getTime();
-  }
-}

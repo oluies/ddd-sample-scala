@@ -1,7 +1,8 @@
-# CLAUDE.md — ddd-sample-scala
+# CLAUDE.md — ddd-sample-scala (rewrite/from-java-master)
 
-This file briefs Claude Code on the repository. Keep it short; rely on the
-skills in `.claude/skills/` and the plan in `.claude/plans/` for depth.
+This file briefs Claude Code on the **rewrite branch**. Keep it short; rely
+on the skills in `.claude/skills/` and the plan in `.claude/plans/` for
+depth.
 
 ## What this is
 
@@ -16,68 +17,75 @@ obscure the DDD lesson.
 
 ## Current state
 
-- **Scala 3.3.4 LTS / Java 17 / sbt 1.10.** `sbt compile`, `sbt Test/compile`,
-  and `sbt test` are all green on `task007/scala3-15d0bf` (6 unit tests pass).
-- Test stack: ScalaTest 3.2.19 + scalatestplus-mockito + ScalaCheck 1.18.
-- Spring 5.2.19 + Hibernate 5.4 + CXF 3.3 — Java side stays on the
-  `javax.*` era libs (Java 17 is the highest baseline that runs them clean).
-- HSQLDB in-memory database for integration tests.
-- See `README.md` "Migration notes (2026-05)" for the migration outcome and
-  `.claude/plans/scala3-upgrade.md` for the original phased plan.
+- **Scala 3.3.4 LTS / Java 21 / Mill 1.1.6.** `mill ddd.compile`,
+  `mill ddd.test.compile`, and `mill ddd.test` are all green on
+  `rewrite/from-java-master` (**73 tests**).
+- Test stack: ScalaTest 3.2.20 + `scalatestplus-mockito-5-12` + ScalaCheck 1.19.
+- Spring Boot 3.3.10 / Jakarta EE 10 / Hibernate 6 (via starter-data-jpa) /
+  ActiveMQ Classic 6.1.5.
+- All 17 phases of [`.claude/plans/rewrite-from-java.md`](.claude/plans/rewrite-from-java.md)
+  are complete; commit history is one tagged commit per phase.
 
-**Known follow-ups** (don't surprise the next session):
-- `interfaces.tracking.CargoTrackingController` is a stub — original
-  extended Spring 2.x's removed `SimpleFormController`. Needs port to
-  Spring 5 `@Controller` / `@GetMapping`.
-- `infrastructure.persistence.hibernate.AbstractRepositoryTest` and
-  `CargoRepositoryTest` are stubs — original used Spring 2.x test
-  framework. Needs port to Spring 5 `SpringExtension` / `@SpringJUnitConfig`.
-- `-Wunused:imports`, `-Wvalue-discard`, `-Xfatal-warnings` are commented
-  out in `build.sbt`. Re-enable in a cleanup PR after fixing the unused
-  imports left by the migration.
-- Test coverage is thin (6 tests). Value objects, aggregate logic, the
-  `Specification` composers, and `HandlingEventFactory`'s exception cases
-  all lack tests. See "Tests worth adding" below.
+**Locked-in design decisions (D1–D5):**
 
-## Tests worth adding
+| ID | Decision |
+| -- | -------- |
+| D1 | Separate persistence model — domain stays JPA-annotation-free. JPA adapters land in 9b (follow-up). |
+| D2 | Opaque types for ids (`TrackingId`, `UnLocode`, `VoyageNumber`). |
+| D3 | Plain `require` for argument validation; `Objects.requireNonNull` for opaque-type null checks (Scala 3 forbids `== null` on opaque types). |
+| D4 | ScalaTest 3.2 `AnyFunSuite with Matchers` + Mockito + ScalaCheck. |
+| D5 | Spring Web MVC + Jackson (REST + JSON), no JSP. |
 
-The migration didn't aim to grow coverage — it aimed to keep what was
-there compiling and passing. These would be high-value additions:
+## Follow-up work (don't surprise the next session)
 
-- **Value objects:** `TrackingId`, `UnLocode`, `VoyageNumber` — equality
-  contract, validation rules, round-trip through `idString`. Good
-  property-test candidates with ScalaCheck.
-- **Specifications:** `AbstractSpecification` + `And/Or/NotSpecification`
-  composition behavior (truth tables).
-- **Itinerary:** `isExpected(event)` for each `HandlingEventType`,
-  `finalArrivalLocation`/`Date`, `lastLeg` edge cases.
-- **Cargo:** `assignToRoute` updates delivery synchronously,
-  `specifyNewRoute` invariants, `deriveDeliveryProgress`.
-- **Delivery:** `transportStatus` / `routingStatus` / `misdirected` /
-  `nextExpectedActivity` for each event-type permutation. This is the
-  most logic-heavy class; deserves a focused suite.
-- **HandlingHistory:** ordering by completion time,
-  `mostRecentlyCompletedEvent` with empty / single / many events.
-- **HandlingEventFactory:** `UnknownCargoException`,
-  `UnknownVoyageException`, `UnknownLocationException` paths.
+- **Phase 9b — JPA adapters.** With D1's separate persistence model, each of
+  the four aggregates needs: JPA entity + mapper + Spring Data interface +
+  adapter implementing the domain trait. In-memory repos (phase 9a) suffice
+  for tests right now. `application.properties` excludes JPA/JMS autoconfig;
+  remove those excludes when the adapters land.
+- **`SampleDataGenerator`.** The `@PostConstruct` `loadHibernateData`
+  orchestration that bootstraps `ABC123` / `JKL567` cargos with handling
+  histories is not yet ported. Sample voyages and locations are wired up;
+  just the orchestration is missing.
+- **`messages*.properties` bundle.** `CargoTrackingDTOConverter` resolves
+  locale-aware status text via Spring `MessageSource`. Keys like
+  `cargo.status.IN_PORT`, `deliveryHistory.eventDescription.LOAD` need a
+  resource bundle.
+- **`UploadDirectoryScanner`.** Upstream's filesystem-watch handling-report
+  ingester is not ported — only the REST `POST /handlingReport` path is.
+- **Strict scalac flags.** `-Wunused:imports` is on (zero warnings).
+  `-Wvalue-discard` and `-Xfatal-warnings` are still off — turning them on
+  requires sprinkling `: Unit` ascriptions over Spring's void setters / JMS
+  sends.
 
 ## Layout
 
 ```
 src/main/scala/se/citerus/dddsample/
   domain/
-    model/{cargo,handling,location,voyage}/   ← aggregates
-    service/                                  ← domain services
+    model/{cargo,handling,location,voyage}/   ← aggregates (framework-free)
+    service/RoutingService                    ← domain service trait
     shared/                                   ← Entity, ValueObject, Specification
-  application/                                ← use-case orchestration (no domain logic)
-  infrastructure/persistence/hibernate/       ← repository implementations
-  infrastructure/routing/                     ← external pathfinder integration
-  interfaces/{booking,handling,tracking}/     ← Spring MVC + CXF facades
+  application/                                ← orchestration traits (no domain logic)
+  application/impl/                           ← @Transactional Spring impls
+  application/util/DateUtils                  ← test-friendly Instant parsers
+  infrastructure/
+    persistence/inmemory/                     ← in-memory repos (phase 9a)
+    routing/ExternalRoutingService            ← adapter to pathfinder API
+    sampledata/{SampleLocations,SampleVoyages}
+    messaging/jms/                            ← ActiveMQ-backed ApplicationEvents + consumers
+  interfaces/
+    booking/facade/                           ← BookingServiceFacade + DTOs + assemblers
+    booking/web/CargoAdminController          ← REST /admin endpoints
+    tracking/ws/                              ← REST /api/track/{id}
+    handling/{ws,HandlingReportParser,...}    ← REST /handlingReport
 
-src/main/scala/com/pathfinder/                ← in-process pathfinder service
-src/main/scala/com/aggregator/                ← inbound handling aggregator (CXF)
-src/main/webapp/                              ← JSP, web.xml, Spring config
-src/test/scala/se/citerus/dddsample/          ← mirrors src/main/scala layout
+src/main/scala/com/pathfinder/
+  api/                                        ← routing-team's interface
+  internal/                                   ← in-process impl
+
+src/test/scala/se/citerus/dddsample/
+  scenario/CargoLifecycleScenarioTest         ← end-to-end book→route→handle scenario
 ```
 
 ## Conventions
@@ -85,50 +93,51 @@ src/test/scala/se/citerus/dddsample/          ← mirrors src/main/scala layout
 - **DDD discipline.** `domain.*` never imports from `infrastructure.*` or
   `interfaces.*`. Application services orchestrate; aggregates own
   invariants. See `.claude/skills/scala-ddd-tactical/SKILL.md`.
+- **Opaque types** are zero-cost wrappers — they're `String` at runtime.
+  Don't compare with `null`; use `Objects.requireNonNull` instead.
+- **Domain stays framework-free.** No JPA, no Spring, no Jackson
+  annotations on `domain.*` types. JPA adapters translate.
 - **Tests mirror source packages**, one suite per production class.
-- **Hibernate mappings** are XML, not annotations. Domain classes stay
-  framework-free.
-- **Integration tests** load a real Spring context against HSQLDB. Don't
-  replace them with mocks — they catch ORM-mapping regressions.
+- **Spring-coupled tests** mock the repositories with Mockito; the scenario
+  test wires the *real* application services to the *in-memory* infra.
 - **Skills:**
-  - `.claude/skills/scala3-migration/SKILL.md` — invoke when editing Scala
-    sources during the migration.
-  - `.claude/skills/scala-ddd-tactical/SKILL.md` — invoke when adding to
-    or refactoring the domain model.
-  - `.claude/skills/scala-testing/SKILL.md` — invoke when writing or
-    porting tests.
+  - `.claude/skills/scala-ddd-tactical/SKILL.md` — invoke when adding to or
+    refactoring the domain model.
+  - `.claude/skills/scala-testing/SKILL.md` — invoke when writing or porting
+    tests.
+  - `.claude/skills/scala3-migration/SKILL.md` — Scala 3 idioms; useful when
+    a Java upstream pattern doesn't translate cleanly.
 
 ## Common commands
 
 ```bash
-sbt compile                       # main compile
-sbt test                          # all tests
-sbt "testOnly *CargoTest"         # one suite
-sbt scalafmtAll                   # format
-sbt scalafmtCheckAll              # CI-style format check
-sbt "Jetty/start"                 # web UI on :8080 (xsbt-web-plugin)
-sbt package                       # WAR
-sbt bookingFacadeJar              # secondary JAR for JAX-WS facade
+mill ddd.compile                       # main compile
+mill ddd.test                          # all 73 tests
+mill 'ddd.test.testOnly *CargoTest'    # one suite
+mill __.reformat                       # format
+mill __.checkFormat                    # CI-style format check
+mill ddd.run                           # boot Spring Boot on :8080
 ```
 
-Java 17 + sbt 1.10 are required. `brew install sbt` (and `brew install
-openjdk@17` if needed).
+Java 21 + Mill 1.x are required. `brew install mill openjdk@21`. The
+`.mill-version` file pins the exact Mill version (Mill and Coursier both
+honour it when launching).
 
 ## Dependency hygiene
 
-- `.github/dependabot.yml` — weekly sbt + GitHub Actions bumps, grouped by
-  family (Spring, CXF, Hibernate, ActiveMQ, Jackson, logging, test
-  frameworks). Defers `org.scala-lang*` to Scala Steward.
-- `.scala-steward.conf` — repo-specific Scala Steward config. Enroll the
-  repo in the relevant `scala-steward-repos` list.
+- `.scala-steward.conf` — repo-specific Scala Steward config. Steward
+  manages every JVM dependency in `build.mill` plus the Mill version.
+  Enroll the repo by adding it to your `scala-steward-repos` list.
+- `.github/dependabot.yml` — GitHub Actions workflows only; Dependabot
+  has no `mill` package ecosystem.
 
 ## What NOT to do
 
 - Don't add Cats Effect / ZIO / Akka to the existing bounded contexts.
   The sample is deliberately framework-light. New experimental contexts
   may use them, but isolate them.
-- Don't replace XML Hibernate mappings with annotations as a side effect
-  of unrelated work — that's a separate, riskier migration.
+- Don't put JPA annotations on `domain.*` classes — that breaks D1. Add a
+  separate JPA entity + mapper instead.
 - Don't `--no-verify` past pre-commit hooks. If a hook fails, fix the cause.
-- Don't re-enable `-Xfatal-warnings` in `build.sbt` without first cleaning
-  up unused imports — it'll break the build.
+- Don't re-enable `-Xfatal-warnings` in `build.mill` without first adding
+  the explicit `: Unit` ascriptions `-Wvalue-discard` will demand.

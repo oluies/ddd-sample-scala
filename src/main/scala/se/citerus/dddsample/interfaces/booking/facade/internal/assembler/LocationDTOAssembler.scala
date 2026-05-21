@@ -1,17 +1,12 @@
 package se.citerus.dddsample.interfaces.booking.facade.internal.assembler
 
 import se.citerus.dddsample.domain.model.location.Location
-import se.citerus.dddsample.interfaces.booking.facade.dto._
+import se.citerus.dddsample.interfaces.booking.facade.dto.LocationDTO
 
-object LocationDTOAssembler {
+final class LocationDTOAssembler:
 
   def toDTO(location: Location): LocationDTO =
-    new LocationDTO(location.unlocode.idString, location.name);
+    LocationDTO(location.unLocode.idString, location.name)
 
-  def toDTOList(allLocations: List[Location]): List[LocationDTO] = {
-    var dtoList = List[LocationDTO]()
-    for (location <- allLocations)
-      dtoList = dtoList ::: List(toDTO(location));
-    return dtoList;
-  }
-}
+  def toDTOList(locations: List[Location]): List[LocationDTO] =
+    locations.map(toDTO)

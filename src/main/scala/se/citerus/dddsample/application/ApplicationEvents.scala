@@ -1,44 +1,20 @@
 package se.citerus.dddsample.application
 
+import se.citerus.dddsample.application.handling.HandlingEventRegistrationAttempt
 import se.citerus.dddsample.domain.model.cargo.Cargo
 import se.citerus.dddsample.domain.model.handling.HandlingEvent
-import se.citerus.dddsample.interfaces.handling.HandlingEventRegistrationAttempt;
 
 /**
- * This interface provides a way to let other parts
- * of the system know about events that have occurred.
- * <p/>
- * It may be implemented synchronously or asynchronously, using
- * for example JMS.
+ * A way to let other parts of the system know about events that have
+ * occurred. Implementations may be synchronous or asynchronous (e.g. via
+ * JMS). Concrete adapter lives in `infrastructure.messaging` (phase 15).
  */
-trait ApplicationEvents {
+trait ApplicationEvents:
 
-  /**
-   * A cargo has been handled.
-   *
-   * @param event handling event
-   */
-  def cargoWasHandled(event: HandlingEvent): Unit;
+  def cargoWasHandled(event: HandlingEvent): Unit
 
-  /**
-   * A cargo has been misdirected.
-   *
-   * @param cargo cargo
-   */
-  def cargoWasMisdirected(cargo: Cargo): Unit;
+  def cargoWasMisdirected(cargo: Cargo): Unit
 
-  /**
-   * A cargo has arrived at its final destination.
-   *
-   * @param cargo cargo
-   */
-  def cargoHasArrived(cargo: Cargo): Unit;
+  def cargoHasArrived(cargo: Cargo): Unit
 
-  /**
-   * A handling event registration attempt is received.
-   *
-   * @param attempt handling event registration attempt
-   */
-  def receivedHandlingEventRegistrationAttempt(attempt: HandlingEventRegistrationAttempt): Unit;
-
-}
+  def receivedHandlingEventRegistrationAttempt(attempt: HandlingEventRegistrationAttempt): Unit

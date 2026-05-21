@@ -1,14 +1,7 @@
 package se.citerus.dddsample.domain.shared
 
-/**
- * OR specification, used to create a new specification that is the OR of two other specifications.
- */
-class OrSpecification[T](val spec1: Specification[T], val spec2: Specification[T])
-    extends AbstractSpecification[T] {
-
-  /**
-   * { @inheritDoc }
-   */
-  def isSatisfiedBy(t: T): Boolean =
+/** OR specification: satisfied iff at least one operand is satisfied. */
+final class OrSpecification[T](spec1: Specification[T], spec2: Specification[T])
+    extends AbstractSpecification[T]:
+  override def isSatisfiedBy(t: T): Boolean =
     spec1.isSatisfiedBy(t) || spec2.isSatisfiedBy(t)
-}

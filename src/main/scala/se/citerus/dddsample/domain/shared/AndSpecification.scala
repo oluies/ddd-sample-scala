@@ -1,14 +1,7 @@
 package se.citerus.dddsample.domain.shared
 
-/**
- * AND specification, used to create a new specifcation that is the AND of two other specifications.
- */
-class AndSpecification[T](val spec1: Specification[T], val spec2: Specification[T])
-    extends AbstractSpecification[T] {
-
-  /**
-   * { @inheritDoc }
-   */
-  def isSatisfiedBy(t: T): Boolean =
+/** AND specification: satisfied iff both operands are satisfied. */
+final class AndSpecification[T](spec1: Specification[T], spec2: Specification[T])
+    extends AbstractSpecification[T]:
+  override def isSatisfiedBy(t: T): Boolean =
     spec1.isSatisfiedBy(t) && spec2.isSatisfiedBy(t)
-}

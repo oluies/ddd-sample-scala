@@ -1,3 +1,6 @@
 package se.citerus.dddsample.interfaces.booking.facade.dto
 
-case class LocationDTO(val unlocode: String, val name: String)
+import java.io.Serializable
+
+/** Location DTO — UN/LOCODE and human-readable name. */
+final case class LocationDTO(unLocode: String, name: String) extends Serializable

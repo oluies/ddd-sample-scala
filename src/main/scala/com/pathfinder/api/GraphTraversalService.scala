@@ -1,25 +1,23 @@
 package com.pathfinder.api
 
-import java.rmi.Remote
-import java.util.Properties;
+import java.util.Properties
 
 /**
- * Part of the external graph traversal API exposed by the routing team
- * and used by us (booking and tracking team).
+ * Part of the external graph-traversal API exposed by the routing team and
+ * consumed by booking / tracking. Upstream Java extends `java.rmi.Remote` —
+ * we drop that since the impl (phase 11) lives in-process and Java RMI is
+ * effectively unused in modern Spring Boot deployments.
  */
-trait GraphTraversalService extends Remote {
+trait GraphTraversalService:
 
   /**
-   * @param originUnLocode origin UN Locode
-   * @param destinationUnLocode destination UN Locode
-   * @param limitations restrictions on the path selection, as key-value according to some API specification
-   * @return A list of transit paths
-   * @throws RemoteException RMI problem
+   * @param origin       UN/LOCODE of origin
+   * @param destination  UN/LOCODE of destination
+   * @param limitations  free-form constraints (e.g. `DEADLINE`)
+   * @return candidate transit paths (may be empty)
    */
   def findShortestPath(
-      originUnLocode: String,
-      destinationUnLocode: String,
+      origin: String,
+      destination: String,
       limitations: Properties
   ): List[TransitPath]
-
-}

@@ -1,55 +1,27 @@
 package se.citerus.dddsample.domain.model.cargo
 
-import java.util.Date
-
-import org.apache.commons.lang3.builder.EqualsBuilder
-import org.apache.commons.lang3.builder.HashCodeBuilder
+import java.time.Instant
+import java.util.Objects
 
 import se.citerus.dddsample.domain.model.location.Location
 import se.citerus.dddsample.domain.model.voyage.Voyage
 import se.citerus.dddsample.domain.shared.ValueObject
 
 /**
- * An itinerary consists of one or more legs.
+ * A single leg of an itinerary — a voyage segment from a load location at a
+ * load time to an unload location at an unload time.
  */
-class Leg(
-    val voyage: Voyage,
-    val loadLocation: Location,
-    val unloadLocation: Location,
-    private val _loadTime: Date,
-    private val _unloadTime: Date
-) extends ValueObject[Leg] {
-  require(voyage != null, "voyage cannot be null")
-  require(loadLocation != null, "loadLocation cannot be null")
-  require(unloadLocation != null, "unloadLocation cannot be null")
-  require(_loadTime != null, "loadTime cannot be null")
-  require(_unloadTime != null, "unloadTime cannot be null")
+final case class Leg(
+    voyage: Voyage,
+    loadLocation: Location,
+    unloadLocation: Location,
+    loadTime: Instant,
+    unloadTime: Instant
+) extends ValueObject[Leg]:
+  Objects.requireNonNull(voyage, "voyage is required")
+  Objects.requireNonNull(loadLocation, "loadLocation is required")
+  Objects.requireNonNull(unloadLocation, "unloadLocation is required")
+  Objects.requireNonNull(loadTime, "loadTime is required")
+  Objects.requireNonNull(unloadTime, "unloadTime is required")
 
-  def loadTime(): Date = new Date(_loadTime.getTime())
-
-  def unloadTime(): Date = new Date(_unloadTime.getTime())
-
-  override def sameValueAs(other: Leg): Boolean =
-    other != null && new EqualsBuilder()
-      .append(this.voyage, other.voyage)
-      .append(this.loadLocation, other.loadLocation)
-      .append(this.unloadLocation, other.unloadLocation)
-      .append(this._loadTime, other._loadTime)
-      .append(this._unloadTime, other._unloadTime)
-      .isEquals()
-
-  override def equals(other: Any): Boolean = other match {
-    case other: Leg => other.getClass == getClass && sameValueAs(other)
-    case _          => false
-  }
-
-  override def hashCode: Int =
-    new HashCodeBuilder()
-      .append(voyage)
-      .append(loadLocation)
-      .append(unloadLocation)
-      .append(_loadTime)
-      .append(_unloadTime)
-      .toHashCode()
-
-}
+  override def sameValueAs(other: Leg): Boolean = other != null && this == other

@@ -1,17 +1,15 @@
 package se.citerus.dddsample.interfaces.booking.facade.dto
 
-import java.util.Date
+import java.io.Serializable
+import java.time.Instant
 
-class CargoRoutingDTO(
-    val trackingId: String,
-    val origin: String,
-    val finalDestination: String,
-    val arrivalDeadline: Date,
-    val misrouted: Boolean
-) {
-  var legs: List[LegDTO] = List()
-
-  def addLeg(voyageNumber: String, from: String, to: String, loadTime: Date, unloadTime: Date) =
-    legs = legs ::: List(new LegDTO(voyageNumber, from, to, loadTime, unloadTime));
-
-}
+/** DTO presenting a cargo's current routing state to a booking clerk. */
+final case class CargoRoutingDTO(
+    trackingId: String,
+    origin: String,
+    finalDestination: String,
+    arrivalDeadline: Instant,
+    misrouted: Boolean,
+    legs: List[LegDTO]
+) extends Serializable:
+  def routed: Boolean = legs.nonEmpty

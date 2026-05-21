@@ -1,19 +1,11 @@
-package se.citerus.dddsample.application;
+package se.citerus.dddsample.application
 
-import se.citerus.dddsample.domain.model.cargo.TrackingId;
+import se.citerus.dddsample.domain.model.cargo.TrackingId
 
 /**
- * Cargo inspection service.
+ * Cargo inspection service. Re-derives the cargo's delivery state from its
+ * handling history and emits domain events for misdirection / arrival.
  */
-trait CargoInspectionService {
+trait CargoInspectionService:
 
-  /**
-   * Inspect cargo and send relevant notifications to interested parties,
-   * for example if a cargo has been misdirected, or unloaded
-   * at the final destination.
-   *
-   * @param trackingId cargo tracking id
-   */
   def inspectCargo(trackingId: TrackingId): Unit
-
-}

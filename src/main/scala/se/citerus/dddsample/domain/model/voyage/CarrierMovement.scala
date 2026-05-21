@@ -1,10 +1,7 @@
 package se.citerus.dddsample.domain.model.voyage
 
-import java.util.Date
-
-import org.apache.commons.lang3.Validate
-import org.apache.commons.lang3.builder.EqualsBuilder
-import org.apache.commons.lang3.builder.HashCodeBuilder
+import java.time.Instant
+import java.util.Objects
 
 import se.citerus.dddsample.domain.model.location.Location
 import se.citerus.dddsample.domain.shared.ValueObject
@@ -12,55 +9,20 @@ import se.citerus.dddsample.domain.shared.ValueObject
 /**
  * A carrier movement is a vessel voyage from one location to another.
  *
- * @param departureLocation location of departure
- * @param arrivalLocation location of arrival
- * @param _departureTime time of departure
- * @param _arrivalTime time of arrival
+ * Pure domain value object — no JPA annotations. `case class` gives us
+ * structural equality and `hashCode` for free; `require` enforces the
+ * upstream Java `Validate.noNullElements` invariant.
  */
-class CarrierMovement(
-    val departureLocation: Location,
-    val arrivalLocation: Location,
-    private val _departureTime: Date,
-    private val _arrivalTime: Date
-) extends ValueObject[CarrierMovement] {
-  Validate.notNull(departureLocation)
-  Validate.notNull(arrivalLocation)
-  Validate.notNull(_departureTime)
-  Validate.notNull(_arrivalTime)
-
-  def departureTime(): Date = new Date(_departureTime.getTime())
-
-  def arrivalTime(): Date = new Date(_arrivalTime.getTime())
-
-  override def equals(other: Any): Boolean = other match {
-    case other: CarrierMovement => other.getClass == getClass && sameValueAs(other)
-    case _                      => false
-  }
-
-  override def hashCode(): Int =
-    new HashCodeBuilder()
-      .append(this.departureLocation)
-      .append(this._departureTime)
-      .append(this.arrivalLocation)
-      .append(this._arrivalTime)
-      .toHashCode()
+final case class CarrierMovement(
+    departureLocation: Location,
+    arrivalLocation: Location,
+    departureTime: Instant,
+    arrivalTime: Instant
+) extends ValueObject[CarrierMovement]:
+  Objects.requireNonNull(departureLocation, "departureLocation must not be null")
+  Objects.requireNonNull(arrivalLocation, "arrivalLocation must not be null")
+  Objects.requireNonNull(departureTime, "departureTime must not be null")
+  Objects.requireNonNull(arrivalTime, "arrivalTime must not be null")
 
   override def sameValueAs(other: CarrierMovement): Boolean =
-    other != null && new EqualsBuilder()
-      .append(this.departureLocation, other.departureLocation)
-      .append(this._departureTime, other._departureTime)
-      .append(this.arrivalLocation, other.arrivalLocation)
-      .append(this._arrivalTime, other._arrivalTime)
-      .isEquals()
-}
-
-object CarrierMovement {
-  // Null object pattern
-  val NONE: CarrierMovement = new CarrierMovement(
-    Location.UNKNOWN,
-    Location.UNKNOWN,
-    new Date(0),
-    new Date(0)
-  )
-
-}
+    other != null && this == other

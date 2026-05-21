@@ -1,35 +1,39 @@
 package se.citerus.dddsample.domain.model.location
 
-import org.apache.commons.lang3.Validate
+import java.util.Objects
 
-import se.citerus.dddsample.domain.shared.Entity
+import se.citerus.dddsample.domain.shared.DomainEntity
 
-class Location(val unlocode: UnLocode, val name: String) extends Entity[Location] {
-  Validate.notNull(unlocode)
-  Validate.notNull(name)
+/**
+ * A location in our model is a stop on a journey, such as a cargo origin or
+ * destination, or carrier-movement endpoints. Uniquely identified by a UN
+ * Locode.
+ *
+ * Pure domain class: no JPA / Hibernate annotations. The JPA persistence
+ * model lives in `infrastructure.persistence.jpa` (phase 9) and converts to
+ * / from this type via a mapper.
+ */
+final class Location private (val unLocode: UnLocode, val name: String)
+    extends DomainEntity[Location]:
 
   override def sameIdentityAs(other: Location): Boolean =
-    unlocode.sameValueAs(other.unlocode)
+    other != null && this.unLocode == other.unLocode
 
-  override def equals(other: Any): Boolean = other match {
-    case other: Location => other.getClass == getClass && sameIdentityAs(other)
-    case _               => false
-  }
+  override def equals(o: Any): Boolean = o match
+    case that: Location => sameIdentityAs(that)
+    case _              => false
 
-  /**
-   * @return Hash code of UN locode.
-   */
-  override def hashCode(): Int = unlocode.hashCode()
+  override def hashCode: Int = unLocode.hashCode
 
-  override def toString(): String =
-    name + " [" + unlocode + "]"
+  override def toString: String = s"$name [${unLocode.idString}]"
 
-}
+object Location:
 
-object Location {
+  /** Special Location object that marks an unknown location. */
+  val UNKNOWN: Location = new Location(UnLocode("XXXXX"), "Unknown location")
 
-  /**
-   * Special Location object that marks an unknown location.
-   */
-  val UNKNOWN: Location = new Location(new UnLocode("XXXXX"), "Unknown location")
-}
+  /** Construct a Location. */
+  def apply(unLocode: UnLocode, name: String): Location =
+    Objects.requireNonNull(unLocode, "unLocode must not be null")
+    Objects.requireNonNull(name, "name must not be null")
+    new Location(unLocode, name)

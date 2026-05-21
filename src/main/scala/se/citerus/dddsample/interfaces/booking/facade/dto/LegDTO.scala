@@ -1,11 +1,13 @@
 package se.citerus.dddsample.interfaces.booking.facade.dto
 
-import java.util.Date
+import java.io.Serializable
+import java.time.Instant
 
-case class LegDTO(
-    val voyageNumber: String,
-    val from: String,
-    val to: String,
-    val loadTime: Date,
-    val unloadTime: Date
-) {}
+/** DTO for one leg of an itinerary. */
+final case class LegDTO(
+    voyageNumber: String,
+    from: String,
+    to: String,
+    loadTime: Instant,
+    unloadTime: Instant
+) extends Serializable

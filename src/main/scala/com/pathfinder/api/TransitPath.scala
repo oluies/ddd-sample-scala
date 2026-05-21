@@ -1,3 +1,6 @@
 package com.pathfinder.api
 
-case class TransitPath(val transitEdges: List[TransitEdge]) extends java.io.Serializable {}
+import java.io.Serializable
+
+/** A path through the routing graph — an ordered list of [[TransitEdge]]s. */
+final case class TransitPath(transitEdges: List[TransitEdge]) extends Serializable

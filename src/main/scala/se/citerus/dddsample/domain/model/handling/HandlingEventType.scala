@@ -4,42 +4,21 @@ import se.citerus.dddsample.domain.shared.ValueObject
 
 /**
  * Handling event type. Either requires or prohibits a carrier movement
- * association, it's never optional.
+ * association; it's never optional.
+ *
+ * Upstream Java declares this as a nested enum inside `HandlingEvent`
+ * (`HandlingEvent.Type`). Scala 3 enums work best at package level, so this
+ * is hoisted out and renamed to `HandlingEventType`. Callers write
+ * `HandlingEventType.LOAD` rather than `HandlingEvent.Type.LOAD`.
  */
-sealed abstract class HandlingEventType(voyageRequired: Boolean)
-    extends ValueObject[HandlingEventType] {
+enum HandlingEventType(val voyageRequired: Boolean) extends ValueObject[HandlingEventType]:
+  case LOAD    extends HandlingEventType(true)
+  case UNLOAD  extends HandlingEventType(true)
+  case RECEIVE extends HandlingEventType(false)
+  case CLAIM   extends HandlingEventType(false)
+  case CUSTOMS extends HandlingEventType(false)
 
-  /**
-   * @return True if a voyage association is required for this event type.
-   */
-  def requiresVoyage(): Boolean =
-    voyageRequired
+  def requiresVoyage: Boolean  = voyageRequired
+  def prohibitsVoyage: Boolean = !voyageRequired
 
-  /**
-   * @return True if a voyage association is prohibited for this event type.
-   */
-  def prohibitsVoyage(): Boolean =
-    !requiresVoyage()
-
-  override def sameValueAs(other: HandlingEventType): Boolean =
-    other != null && this.equals(other)
-}
-
-object HandlingEventType {
-  def valueOf(eventTypeString: String) = {
-    val eventType: HandlingEventType = eventTypeString match {
-      case "RECEIVE" => RECEIVE
-      case "LOAD"    => LOAD
-      case "UNLOAD"  => UNLOAD
-      case "CLAIM"   => CLAIM
-      case "CUSTOMS" => CUSTOMS
-    }
-    eventType
-  }
-}
-
-case object RECEIVE extends HandlingEventType(voyageRequired = false)
-case object LOAD    extends HandlingEventType(voyageRequired = true)
-case object UNLOAD  extends HandlingEventType(voyageRequired = true)
-case object CLAIM   extends HandlingEventType(voyageRequired = false)
-case object CUSTOMS extends HandlingEventType(voyageRequired = false)
+  override def sameValueAs(other: HandlingEventType): Boolean = this == other

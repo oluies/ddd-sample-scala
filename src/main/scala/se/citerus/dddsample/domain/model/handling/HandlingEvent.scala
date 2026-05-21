@@ -1,9 +1,7 @@
 package se.citerus.dddsample.domain.model.handling
 
-import java.util.Date
-
-import org.apache.commons.lang3.Validate
-import org.apache.commons.lang3.builder.EqualsBuilder
+import java.time.Instant
+import java.util.Objects
 
 import se.citerus.dddsample.domain.model.cargo.Cargo
 import se.citerus.dddsample.domain.model.location.Location
@@ -11,32 +9,106 @@ import se.citerus.dddsample.domain.model.voyage.Voyage
 import se.citerus.dddsample.domain.shared.DomainEvent
 
 /**
- * A HandlingEvent is used to register the event when, for instance,
- * a cargo is unloaded from a carrier at a some loacation at a given time.
+ * A HandlingEvent records that a cargo was handled — for instance, unloaded
+ * from a carrier — at a given location and time. HandlingEvents are sent
+ * from incident-logging applications some time after the event actually
+ * happened.
+ *
+ * Aggregate root: every HandlingEvent is the root of its own (single-class)
+ * aggregate. Domain layer stays JPA-annotation-free; the persistence model
+ * lives in `infrastructure.persistence.jpa` (phase 9).
+ *
+ * `voyage` is `Option[Voyage]` — `RECEIVE`, `CLAIM`, `CUSTOMS` events have
+ * `None`; `LOAD` / `UNLOAD` require `Some(_)`. The smart constructors
+ * enforce this.
  */
-class HandlingEvent(
+final class HandlingEvent private (
     val cargo: Cargo,
-    val completionTime: Date,
-    val registrationTime: Date,
+    val completionTime: Instant,
+    val registrationTime: Instant,
     val eventType: HandlingEventType,
     val location: Location,
-    val voyage: Voyage
-) extends DomainEvent[HandlingEvent] {
-  Validate.notNull(cargo, "Cargo is required")
-  Validate.notNull(completionTime, "Completion time is required")
-  Validate.notNull(registrationTime, "Registration time is required")
-  Validate.notNull(eventType, "Handling event type is required")
-  Validate.notNull(location, "Location is required")
+    val voyage: Option[Voyage]
+) extends DomainEvent[HandlingEvent]:
 
-  require(!eventType.prohibitsVoyage(), "Voyage is not allowed with event type " + eventType)
+  override def sameEventAs(other: HandlingEvent): Boolean =
+    other != null &&
+      cargo == other.cargo &&
+      voyage == other.voyage &&
+      completionTime == other.completionTime &&
+      location == other.location &&
+      eventType == other.eventType
 
-  def sameEventAs(other: HandlingEvent): Boolean =
-    other != null && new EqualsBuilder()
-      .append(this.cargo, other.cargo)
-      .append(this.voyage, other.voyage)
-      .append(this.completionTime, other.completionTime)
-      .append(this.location, other.location)
-      .append(this.eventType, other.eventType)
-      .isEquals()
+  override def equals(o: Any): Boolean = o match
+    case that: HandlingEvent => sameEventAs(that)
+    case _                   => false
 
-}
+  override def hashCode: Int =
+    var h = cargo.hashCode
+    h = 31 * h + voyage.hashCode
+    h = 31 * h + completionTime.hashCode
+    h = 31 * h + location.hashCode
+    h = 31 * h + eventType.hashCode
+    h
+
+  override def toString: String =
+    val builder = new StringBuilder("\n--- Handling event ---\n")
+      .append("Cargo: ")
+      .append(cargo.trackingId.idString)
+      .append('\n')
+      .append("Type: ")
+      .append(eventType)
+      .append('\n')
+      .append("Location: ")
+      .append(location.name)
+      .append('\n')
+      .append("Completed on: ")
+      .append(completionTime)
+      .append('\n')
+      .append("Registered on: ")
+      .append(registrationTime)
+      .append('\n')
+    voyage.foreach(v => builder.append("Voyage: ").append(v.voyageNumber.idString).append('\n'))
+    builder.toString
+
+object HandlingEvent:
+
+  /**
+   * Constructor for a voyage-associated event (`LOAD` or `UNLOAD`). Throws
+   * `IllegalArgumentException` if `eventType.prohibitsVoyage`.
+   */
+  def apply(
+      cargo: Cargo,
+      completionTime: Instant,
+      registrationTime: Instant,
+      eventType: HandlingEventType,
+      location: Location,
+      voyage: Voyage
+  ): HandlingEvent =
+    Objects.requireNonNull(cargo, "Cargo is required")
+    Objects.requireNonNull(completionTime, "Completion time is required")
+    Objects.requireNonNull(registrationTime, "Registration time is required")
+    Objects.requireNonNull(eventType, "Handling event type is required")
+    Objects.requireNonNull(location, "Location is required")
+    Objects.requireNonNull(voyage, "Voyage is required")
+    require(!eventType.prohibitsVoyage, s"Voyage is not allowed with event type $eventType")
+    new HandlingEvent(cargo, completionTime, registrationTime, eventType, location, Some(voyage))
+
+  /**
+   * Constructor for a non-voyage event (`RECEIVE`, `CLAIM`, `CUSTOMS`).
+   * Throws `IllegalArgumentException` if `eventType.requiresVoyage`.
+   */
+  def apply(
+      cargo: Cargo,
+      completionTime: Instant,
+      registrationTime: Instant,
+      eventType: HandlingEventType,
+      location: Location
+  ): HandlingEvent =
+    Objects.requireNonNull(cargo, "Cargo is required")
+    Objects.requireNonNull(completionTime, "Completion time is required")
+    Objects.requireNonNull(registrationTime, "Registration time is required")
+    Objects.requireNonNull(eventType, "Handling event type is required")
+    Objects.requireNonNull(location, "Location is required")
+    require(!eventType.requiresVoyage, s"Voyage is required for event type $eventType")
+    new HandlingEvent(cargo, completionTime, registrationTime, eventType, location, None)

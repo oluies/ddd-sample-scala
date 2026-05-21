@@ -1,74 +1,60 @@
 package se.citerus.dddsample.domain.model.handling
 
-import java.util.Date
+import java.time.Instant
 
-import se.citerus.dddsample.domain.model.cargo.Cargo
-import se.citerus.dddsample.domain.model.cargo.CargoRepository
-import se.citerus.dddsample.domain.model.cargo.TrackingId
-import se.citerus.dddsample.domain.model.location.Location
-import se.citerus.dddsample.domain.model.location.LocationRepository
-import se.citerus.dddsample.domain.model.location.UnLocode
-import se.citerus.dddsample.domain.model.voyage.Voyage
-import se.citerus.dddsample.domain.model.voyage.VoyageNumber
-import se.citerus.dddsample.domain.model.voyage.VoyageRepository
+import se.citerus.dddsample.domain.model.cargo.{CargoRepository, TrackingId}
+import se.citerus.dddsample.domain.model.location.{LocationRepository, UnLocode}
+import se.citerus.dddsample.domain.model.voyage.{VoyageNumber, VoyageRepository}
 
 /**
- * Creates handling events.
+ * Application-tier factory that creates [[HandlingEvent]]s, looking up the
+ * referenced cargo / voyage / location via their repositories.
+ *
+ * Returns `Either[CannotCreateHandlingEventException, HandlingEvent]` — the
+ * lookup failures (`UnknownCargoException`, `UnknownVoyageException`,
+ * `UnknownLocationException`) and the `HandlingEvent.apply` validation
+ * failure all surface as `Left` values. Callers at the boundary
+ * (`HandlingEventServiceImpl`) decide whether to translate them back into
+ * thrown exceptions for transactional rollback.
  */
-class HandlingEventFactory(
+final class HandlingEventFactory(
     cargoRepository: CargoRepository,
     voyageRepository: VoyageRepository,
     locationRepository: LocationRepository
-) {
+):
 
-  /**
-   * @param registrationTime time when this event was received by the system
-   * @param completionTime when the event was completed, for example finished loading
-   * @param trackingId cargo tracking id
-   * @param voyageNumber voyage number
-   * @param unlocode United Nations Location Code for the location of the event
-   * @param eventType type of event
-   * @throws UnknownVoyageException if there's no voyage with this number
-   * @throws UnknownCargoException if there's no cargo with this tracking id
-   * @throws UnknownLocationException if there's no location with this UN Locode
-   * @return A handling event.
-   */
   def createHandlingEvent(
-      registrationTime: Date,
-      completionTime: Date,
+      registrationTime: Instant,
+      completionTime: Instant,
       trackingId: TrackingId,
-      voyageNumber: VoyageNumber,
+      voyageNumber: Option[VoyageNumber],
       unlocode: UnLocode,
       eventType: HandlingEventType
-  ): HandlingEvent = {
-    val cargo    = findCargo(trackingId)
-    val voyage   = findVoyage(voyageNumber)
-    val location = findLocation(unlocode)
+  ): Either[CannotCreateHandlingEventException, HandlingEvent] =
+    for
+      cargo    <- cargoRepository.find(trackingId).toRight(UnknownCargoException(trackingId))
+      location <- locationRepository.find(unlocode).toRight(UnknownLocationException(unlocode))
+      voyage <- voyageNumber.fold(
+        Right(None): Either[CannotCreateHandlingEventException, Option[
+          se.citerus.dddsample.domain.model.voyage.Voyage
+        ]]
+      )(vn => voyageRepository.find(vn).map(Some(_)).toRight(UnknownVoyageException(vn)))
+      event <- buildEvent(cargo, completionTime, registrationTime, eventType, location, voyage)
+    yield event
 
+  private def buildEvent(
+      cargo: se.citerus.dddsample.domain.model.cargo.Cargo,
+      completionTime: Instant,
+      registrationTime: Instant,
+      eventType: HandlingEventType,
+      location: se.citerus.dddsample.domain.model.location.Location,
+      voyage: Option[se.citerus.dddsample.domain.model.voyage.Voyage]
+  ): Either[CannotCreateHandlingEventException, HandlingEvent] =
     try
-      if (voyage == null) {
-        new HandlingEvent(cargo, completionTime, registrationTime, eventType, location, null)
-      } else {
-        new HandlingEvent(cargo, completionTime, registrationTime, eventType, location, voyage)
-      }
-    catch {
-      case e: Exception => throw new CannotCreateHandlingEventException(e)
-    }
-  }
-
-  def findCargo(trackingId: TrackingId): Cargo =
-    cargoRepository.find(trackingId).getOrElse(throw new UnknownCargoException(trackingId))
-
-  def findVoyage(voyageNumber: VoyageNumber): Voyage =
-    if (voyageNumber == null) {
-      null
-    } else {
-      voyageRepository.find(voyageNumber).getOrElse {
-        throw new UnknownVoyageException(voyageNumber)
-      }
-    }
-
-  def findLocation(unlocode: UnLocode): Location =
-    locationRepository.find(unlocode).getOrElse(throw new UnknownLocationException(unlocode))
-
-}
+      Right(voyage match
+        case Some(v) =>
+          HandlingEvent(cargo, completionTime, registrationTime, eventType, location, v)
+        case None =>
+          HandlingEvent(cargo, completionTime, registrationTime, eventType, location)
+      )
+    catch case e: Exception => Left(new CannotCreateHandlingEventException(e))
