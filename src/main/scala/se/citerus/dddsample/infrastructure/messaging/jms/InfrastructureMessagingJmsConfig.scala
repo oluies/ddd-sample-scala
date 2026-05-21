@@ -10,6 +10,9 @@ import jakarta.jms.{
 }
 import java.util.List as JList
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.activemq.ActiveMQConnectionFactory
 import org.apache.activemq.command.ActiveMQDestination
 import org.springframework.beans.factory.annotation.{Qualifier, Value}
@@ -50,10 +53,13 @@ class InfrastructureMessagingJmsConfig:
   def handlingEventRegistrationAttemptConsumer(
       session: Session,
       @Qualifier("handlingEventRegistrationAttemptQueue") destination: Destination,
-      handlingEventService: HandlingEventService
+      handlingEventService: HandlingEventService,
+      @Qualifier("jmsObjectMapper") objectMapper: ObjectMapper
   ): MessageConsumer =
     val c = session.createConsumer(destination)
-    c.setMessageListener(new HandlingEventRegistrationAttemptConsumer(handlingEventService))
+    c.setMessageListener(
+      new HandlingEventRegistrationAttemptConsumer(handlingEventService, objectMapper)
+    )
     c
 
   @Bean(value = Array("misdirectedCargoConsumer"), destroyMethod = "close")
@@ -113,15 +119,27 @@ class InfrastructureMessagingJmsConfig:
   @Bean
   def jmsConnectionFactory(): ConnectionFactory =
     val factory = new ActiveMQConnectionFactory(brokerUrl)
-    factory.setTrustedPackages(
-      JList.of(
-        "se.citerus.dddsample.interfaces.handling",
-        "se.citerus.dddsample.domain",
-        "java.util",
-        "scala"
-      )
-    )
+    // All five queues now carry only TextMessage payloads (tracking-id
+    // strings + the JSON-serialized HandlingEventRegistrationAttempt), so no
+    // class names cross the wire and Java deserialization can't be reached
+    // even if an attacker gained broker access. Empty list = ObjectMessage
+    // deserialization rejects every class.
+    factory.setTrustedPackages(JList.of())
     factory
+
+  /**
+   * Dedicated Jackson `ObjectMapper` for JMS payloads. Registers the Scala
+   * module so `Option`, case classes, and Scala 3 enums round-trip cleanly,
+   * and the JSR-310 module so `java.time.Instant` serialises as ISO-8601.
+   * Kept distinct from Spring's REST-facing `ObjectMapper` so behavioural
+   * changes to one don't surprise the other.
+   */
+  @Bean(Array("jmsObjectMapper"))
+  def jmsObjectMapper: ObjectMapper =
+    val mapper = new ObjectMapper
+    mapper.registerModule(new JavaTimeModule)
+    mapper.registerModule(DefaultScalaModule)
+    mapper
 
   @Bean
   def jmsOperations(jmsConnectionFactory: ConnectionFactory): JmsOperations =
@@ -149,7 +167,8 @@ class InfrastructureMessagingJmsConfig:
       ) rejectedRegistrationAttemptsQueue: Destination,
       @Qualifier(
         "handlingEventRegistrationAttemptQueue"
-      ) handlingEventRegistrationAttemptQueue: Destination
+      ) handlingEventRegistrationAttemptQueue: Destination,
+      @Qualifier("jmsObjectMapper") objectMapper: ObjectMapper
   ): ApplicationEvents =
     new JmsApplicationEventsImpl(
       jmsOperations,
@@ -157,7 +176,8 @@ class InfrastructureMessagingJmsConfig:
       misdirectedCargoQueue,
       deliveredCargoQueue,
       rejectedRegistrationAttemptsQueue,
-      handlingEventRegistrationAttemptQueue
+      handlingEventRegistrationAttemptQueue,
+      objectMapper
     )
 
   private def createQueue(name: String): Destination =

@@ -66,7 +66,14 @@ object ddd extends ScalaModule with ScalafmtModule {
     mvn"org.apache.commons:commons-lang3:3.20.0",
     mvn"commons-io:commons-io:2.18.0",
     // HSQLDB for the dev profile + integration tests (matches upstream Java).
-    mvn"org.hsqldb:hsqldb:2.7.4"
+    mvn"org.hsqldb:hsqldb:2.7.4",
+    // jackson-module-scala lets Jackson serialize/deserialize Scala `Option`
+    // and case classes natively. Used by the JMS payload serializer so we
+    // can drop `scala` from the broker's setTrustedPackages list (any future
+    // attacker reaching the queue can't pivot through Java deserialization
+    // of `scala.Some` / `scala.None` etc.). Version-aligned with the
+    // Jackson 2.18.x that Spring Boot 3.3.10 brings in transitively.
+    mvn"com.fasterxml.jackson.module::jackson-module-scala:2.18.2"
   )
 
   object test extends ScalaTests with TestModule.ScalaTest with ScalafmtModule {

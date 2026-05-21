@@ -30,8 +30,10 @@ final class HandlingReportServiceImpl(applicationEvents: ApplicationEvents)
       attempts.foreach(applicationEvents.receivedHandlingEventRegistrationAttempt)
       ResponseEntity.status(HttpStatus.CREATED).build()
     catch
+      // IllegalArgumentException is handled by HandlingInterfacesExceptionHandler
+      // and turned into a 400. Anything else is unexpected — log it and return
+      // an empty 500 (no `e.getMessage` echo, to avoid leaking internal state
+      // such as JMS broker / queue identifiers to unauthenticated clients).
       case e: Exception =>
         logger.error("Unexpected error in submitReport", e)
-        ResponseEntity
-          .status(HttpStatus.INTERNAL_SERVER_ERROR)
-          .body(s"Internal server error: ${e.getMessage}")
+        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()

@@ -2,6 +2,7 @@ package se.citerus.dddsample.infrastructure.messaging.jms
 
 import jakarta.jms.Destination
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
 import org.springframework.jms.core.{JmsOperations, MessageCreator}
 
@@ -14,6 +15,13 @@ import se.citerus.dddsample.interfaces.handling.HandlingEventRegistrationAttempt
  * JMS-backed [[ApplicationEvents]]. Each event becomes a message on a
  * dedicated queue. Used in the default Spring profile; in-process tests
  * can substitute a simpler synchronous implementation.
+ *
+ * All five queues now carry only `TextMessage` payloads — the four
+ * cargo-status queues with a bare tracking-id string, and the registration
+ * queue with a JSON-serialised `HandlingEventRegistrationAttempt`. No
+ * Java-serialised `ObjectMessage` is ever sent, which means the broker's
+ * `setTrustedPackages` list is empty and there's no Java deserialization
+ * gadget chain reachable even if an attacker gained broker access.
  */
 final class JmsApplicationEventsImpl(
     jmsOperations: JmsOperations,
@@ -21,7 +29,8 @@ final class JmsApplicationEventsImpl(
     misdirectedCargoQueue: Destination,
     deliveredCargoQueue: Destination,
     @scala.annotation.unused rejectedRegistrationAttemptsQueue: Destination,
-    handlingEventQueue: Destination
+    handlingEventQueue: Destination,
+    objectMapper: ObjectMapper
 ) extends ApplicationEvents:
 
   private val logger = LoggerFactory.getLogger(getClass)
@@ -52,7 +61,8 @@ final class JmsApplicationEventsImpl(
       attempt: HandlingEventRegistrationAttempt
   ): Unit =
     logger.info("Received handling event registration attempt {}", attempt)
+    val payload = objectMapper.writeValueAsString(attempt)
     jmsOperations.send(
       handlingEventQueue,
-      (session => session.createObjectMessage(attempt)): MessageCreator
+      (session => session.createTextMessage(payload)): MessageCreator
     )
