@@ -1,6 +1,6 @@
 # ddd-sample-scala
 
-[![CI](https://github.com/oluies/ddd-sample-scala/actions/workflows/ci.yml/badge.svg?branch=rewrite/from-java-master)](https://github.com/oluies/ddd-sample-scala/actions/workflows/ci.yml)
+[![CI](https://github.com/oluies/ddd-sample-scala/actions/workflows/ci.yml/badge.svg)](https://github.com/oluies/ddd-sample-scala/actions/workflows/ci.yml)
 [![Scala](https://img.shields.io/badge/scala-3.3.4_LTS-DC322F?logo=scala&logoColor=white)](https://www.scala-lang.org/)
 [![Java](https://img.shields.io/badge/java-21-007396?logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/21/)
 [![Spring Boot](https://img.shields.io/badge/spring%20boot-3.3.10-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
