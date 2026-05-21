@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   build:
-    name: sbt test (Java ${{ matrix.java }})
+    name: mill test (Java ${{ matrix.java }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -33,36 +33,35 @@ jobs:
           distribution: temurin
           java-version: ${{ matrix.java }}
 
-      - name: Set up sbt
-        uses: sbt/setup-sbt@v1
+      - name: Set up Coursier (installs Mill at the version in .mill-version)
+        uses: coursier/setup-action@v1
+        with:
+          apps: mill
 
-      - name: Cache sbt
+      - name: Cache Mill + Coursier
         uses: actions/cache@v4
         with:
           path: |
-            ~/.sbt
-            ~/.ivy2/cache
+            ~/.cache/mill
             ~/.cache/coursier
-          key: ${{ runner.os }}-sbt-${{ hashFiles('**/*.sbt', 'project/build.properties', 'project/plugins.sbt') }}
+          key: ${{ runner.os }}-mill-${{ hashFiles('**/build.mill', '.mill-version') }}
           restore-keys: |
-            ${{ runner.os }}-sbt-
+            ${{ runner.os }}-mill-
 
       - name: Show toolchain versions
         run: |
           java -version
-          sbt --version
+          mill --version
 
       - name: Compile
-        run: sbt -v "compile; Test/compile"
+        run: mill ddd.compile + ddd.test.compile
 
       - name: Test
-        # Phase 0: empty source tree, no tests. Re-enable test stage once
-        # phase 2 (domain.shared) lands.
         if: hashFiles('src/test/scala/**/*.scala') != ''
-        run: sbt -v test
+        run: mill ddd.test
 
       - name: Check formatting
-        run: sbt scalafmtCheckAll
+        run: mill __.checkFormat
 
       - name: Upload test reports
         if: always()
@@ -70,7 +69,7 @@ jobs:
         with:
           name: test-reports-java-${{ matrix.java }}
           path: |
-            target/test-reports/**
-            target/scala-*/test-reports/**
+            out/ddd/test/test-report.xml
+            out/ddd/test/test-classes/**/*-output.txt
           if-no-files-found: ignore
           retention-days: 14

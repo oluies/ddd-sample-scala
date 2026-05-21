@@ -17,8 +17,9 @@ obscure the DDD lesson.
 
 ## Current state
 
-- **Scala 3.3.4 LTS / Java 21 / sbt 1.10.** `sbt compile`, `sbt Test/compile`,
-  and `sbt test` are all green on `rewrite/from-java-master` (**73 tests**).
+- **Scala 3.3.4 LTS / Java 21 / Mill 1.1.6.** `mill ddd.compile`,
+  `mill ddd.test.compile`, and `mill ddd.test` are all green on
+  `rewrite/from-java-master` (**73 tests**).
 - Test stack: ScalaTest 3.2.20 + `scalatestplus-mockito-5-12` + ScalaCheck 1.19.
 - Spring Boot 3.3.10 / Jakarta EE 10 / Hibernate 6 (via starter-data-jpa) /
   ActiveMQ Classic 6.1.5.
@@ -110,23 +111,25 @@ src/test/scala/se/citerus/dddsample/
 ## Common commands
 
 ```bash
-sbt compile                       # main compile
-sbt test                          # all 73 tests
-sbt "testOnly *CargoTest"         # one suite
-sbt scalafmtAll                   # format
-sbt scalafmtCheckAll              # CI-style format check
-sbt run                           # boot Spring Boot on :8080
+mill ddd.compile                       # main compile
+mill ddd.test                          # all 73 tests
+mill 'ddd.test.testOnly *CargoTest'    # one suite
+mill __.reformat                       # format
+mill __.checkFormat                    # CI-style format check
+mill ddd.run                           # boot Spring Boot on :8080
 ```
 
-Java 21 + sbt 1.10 are required. `brew install sbt openjdk@21`.
+Java 21 + Mill 1.x are required. `brew install mill openjdk@21`. The
+`.mill-version` file pins the exact Mill version (Mill and Coursier both
+honour it when launching).
 
 ## Dependency hygiene
 
-- `.github/dependabot.yml` — weekly sbt + GitHub Actions bumps, grouped by
-  family (Spring, Hibernate, ActiveMQ, Jackson, logging, test frameworks).
-  Defers `org.scala-lang*` to Scala Steward.
-- `.scala-steward.conf` — repo-specific Scala Steward config. Enroll the
-  repo in the relevant `scala-steward-repos` list.
+- `.scala-steward.conf` — repo-specific Scala Steward config. Steward
+  manages every JVM dependency in `build.mill` plus the Mill version.
+  Enroll the repo by adding it to your `scala-steward-repos` list.
+- `.github/dependabot.yml` — GitHub Actions workflows only; Dependabot
+  has no `mill` package ecosystem.
 
 ## What NOT to do
 
@@ -136,5 +139,5 @@ Java 21 + sbt 1.10 are required. `brew install sbt openjdk@21`.
 - Don't put JPA annotations on `domain.*` classes — that breaks D1. Add a
   separate JPA entity + mapper instead.
 - Don't `--no-verify` past pre-commit hooks. If a hook fails, fix the cause.
-- Don't re-enable `-Xfatal-warnings` in `build.sbt` without first adding
+- Don't re-enable `-Xfatal-warnings` in `build.mill` without first adding
   the explicit `: Unit` ascriptions `-Wvalue-discard` will demand.

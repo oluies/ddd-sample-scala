@@ -7,15 +7,12 @@
 .idea/
 *.iml
 
-# sbt + bsp + metals
-target/
-project/target/
-project/project/
+# Mill + bsp + metals
+out/
 .bsp/
 .metals/
 .bloop/
 .scala-build/
-metals.sbt
 
 # Scala compile output (legacy)
 bin/

@@ -4,7 +4,7 @@
 [![Scala](https://img.shields.io/badge/scala-3.3.4_LTS-DC322F?logo=scala&logoColor=white)](https://www.scala-lang.org/)
 [![Java](https://img.shields.io/badge/java-21-007396?logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/21/)
 [![Spring Boot](https://img.shields.io/badge/spring%20boot-3.3.10-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![sbt](https://img.shields.io/badge/sbt-1.10-CA4D2D?logo=scala&logoColor=white)](https://www.scala-sbt.org/)
+[![Mill](https://img.shields.io/badge/mill-1.1.6-5697C4?logo=scala&logoColor=white)](https://mill-build.org/)
 [![Tests](https://img.shields.io/badge/tests-73%20passing-brightgreen)](#status)
 [![Scala Steward badge](https://img.shields.io/badge/Scala_Steward-helping-blue?logo=scala&logoColor=white)](https://github.com/scala-steward-org/scala-steward)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](license.txt)
@@ -21,14 +21,15 @@ clarity over cleverness.
 
 The `rewrite/from-java-master` branch is a clean rewrite from the Java
 upstream's current `Spring Boot 3.3 / Jakarta EE / Hibernate 6` baseline,
-targeting **Scala 3.3.4 LTS** on **Java 21** and **sbt 1.10**. All 17 phases
-of the rewrite plan are complete; `sbt test` is green (73 tests).
+targeting **Scala 3.3.4 LTS** on **Java 21** and **Mill 1.1.6**. All 17
+phases of the rewrite plan are complete; `mill ddd.test` is green
+(73 tests).
 
 | Component        | Version              | Notes                                     |
 | ---------------- | -------------------- | ----------------------------------------- |
 | Scala            | 3.3.4 LTS            | dialect: `-source:3.3`                    |
 | Java             | 21                   | `--release 21` baseline                   |
-| Build            | sbt 1.10             |                                           |
+| Build            | Mill 1.1.6           | pinned in `.mill-version`                 |
 | Spring Boot      | 3.3.10               | starter-web, starter-data-jpa, activemq, actuator, validation, thymeleaf |
 | Jakarta EE       | 10                   | via Spring Boot 3.3 BOM                   |
 | Hibernate        | 6.x                  | transitive via `spring-boot-starter-data-jpa` |
@@ -88,26 +89,27 @@ The DDD invariant: `domain.*` never imports from `infrastructure.*` or
 ## Build & run
 
 ```bash
-sbt compile                       # compile main sources
-sbt test                          # run all tests (73 currently)
-sbt "testOnly *CargoTest"         # run a single suite
-sbt scalafmtAll                   # format the codebase
-sbt scalafmtCheckAll              # CI-style format check
-sbt run                           # boot Spring Boot on :8080
+mill ddd.compile                  # compile main sources
+mill ddd.test                     # run all tests (73 currently)
+mill 'ddd.test.testOnly *CargoTest'   # run a single suite
+mill __.reformat                  # format the codebase
+mill __.checkFormat               # CI-style format check
+mill ddd.run                      # boot Spring Boot on :8080
 ```
 
-Requires JDK 21 and sbt 1.10+ on the PATH. Install sbt with `brew install sbt`
-or via [Coursier](https://get-coursier.io/).
+Requires JDK 21 and Mill on the PATH. Install Mill with `brew install mill`
+or via [Coursier](https://get-coursier.io/) (`cs install mill`). The
+`.mill-version` file pins the Mill version; both installers honour it.
 
 ## Dependency management
 
-- **Dependabot** ([`.github/dependabot.yml`](.github/dependabot.yml)) —
-  weekly sbt + GitHub Actions PRs, grouped by Spring / CXF / Hibernate /
-  ActiveMQ / Jackson / logging / test frameworks. Defers `org.scala-lang*`
-  to Scala Steward.
-- **Scala Steward** ([`.scala-steward.conf`](.scala-steward.conf)) — enroll
+- **Scala Steward** ([`.scala-steward.conf`](.scala-steward.conf)) — handles
+  every JVM dependency in `build.mill` plus the Mill version itself. Enroll
   by adding `oluies/ddd-sample-scala` to your `scala-steward-repos` list;
   Steward picks up the repo-local config automatically.
+- **Dependabot** ([`.github/dependabot.yml`](.github/dependabot.yml)) —
+  GitHub Actions workflows only. Dependabot has no `mill` package
+  ecosystem, so JVM-side bumps live with Scala Steward.
 
 ## Working with Claude Code
 
