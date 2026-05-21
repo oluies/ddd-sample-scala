@@ -67,6 +67,9 @@ object ddd extends ScalaModule with ScalafmtModule {
     mvn"commons-io:commons-io:2.18.0",
     // HSQLDB for the dev profile + integration tests (matches upstream Java).
     mvn"org.hsqldb:hsqldb:2.7.4",
+    // H2 — used by the phase 9b JPA PoC. Spring Boot's data-jpa autoconfig
+    // picks it up automatically when no other DataSource is configured.
+    mvn"com.h2database:h2:2.3.232",
     // jackson-module-scala lets Jackson serialize/deserialize Scala `Option`
     // and case classes natively. Used by the JMS payload serializer so we
     // can drop `scala` from the broker's setTrustedPackages list (any future
