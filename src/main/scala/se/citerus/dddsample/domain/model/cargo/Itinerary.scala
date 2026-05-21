@@ -8,12 +8,13 @@ import se.citerus.dddsample.domain.model.location.Location
 import se.citerus.dddsample.domain.shared.ValueObject
 
 /**
- * An itinerary — an ordered list of [[Leg]]s describing the route a cargo
- * follows from origin to destination.
+ * An itinerary — an ordered, non-empty list of [[Leg]]s describing the
+ * route a cargo follows from origin to destination. The `apply` factory
+ * rejects null, empty, and null-containing leg lists, and the private
+ * constructor seals the invariant.
  *
- * The empty `Itinerary` exists only as the [[Itinerary.EMPTY]] sentinel used
- * by [[Cargo]] when no route is yet assigned. Production itineraries created
- * via `apply` must be non-empty and contain no nulls.
+ * A `Cargo` without a route exposes `Option[Itinerary]` (`Cargo.itineraryOpt`)
+ * directly — there is no longer a `Itinerary.EMPTY` sentinel.
  */
 final class Itinerary private (val legs: List[Leg]) extends ValueObject[Itinerary]:
 
@@ -59,13 +60,6 @@ final class Itinerary private (val legs: List[Leg]) extends ValueObject[Itinerar
   override def hashCode: Int = legs.hashCode
 
 object Itinerary:
-
-  /**
-   * Sentinel returned by `Cargo.itinerary` when no route has been assigned.
-   * Not a valid production itinerary; bypasses the non-empty check via the
-   * private constructor.
-   */
-  val EMPTY: Itinerary = new Itinerary(Nil)
 
   def apply(legs: List[Leg]): Itinerary =
     Objects.requireNonNull(legs, "legs must not be null")

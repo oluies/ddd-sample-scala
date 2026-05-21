@@ -33,7 +33,8 @@ object CargoTrackingDTOConverter:
         time = he.completionTime.toString,
         `type` = he.eventType.toString,
         voyageNumber = he.voyage.map(_.voyageNumber.idString).getOrElse(""),
-        isExpected = cargo.itinerary.isExpected(he),
+        // No assigned itinerary ⇒ event has no plan to violate ⇒ treat as expected.
+        isExpected = cargo.itineraryOpt.forall(_.isExpected(he)),
         description = describe(he, messageSource, locale)
       )
     }

@@ -69,8 +69,3 @@ class CarrierMovementTest extends AnyFunSuite with Matchers:
     (cm2.hashCode == cm3.hashCode) shouldBe false
     (cm3.hashCode == cm4.hashCode) shouldBe true
   }
-
-  test("NONE is the null object") {
-    CarrierMovement.NONE.departureLocation shouldEqual Location.UNKNOWN
-    CarrierMovement.NONE.arrivalLocation shouldEqual Location.UNKNOWN
-  }

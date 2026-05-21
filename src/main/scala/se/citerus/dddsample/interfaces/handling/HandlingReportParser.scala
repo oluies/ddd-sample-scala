@@ -5,6 +5,7 @@ import java.util.List as JList
 
 import scala.jdk.CollectionConverters.*
 
+import se.citerus.dddsample.application.handling.HandlingEventRegistrationAttempt
 import se.citerus.dddsample.domain.model.cargo.TrackingId
 import se.citerus.dddsample.domain.model.handling.HandlingEventType
 import se.citerus.dddsample.domain.model.location.UnLocode

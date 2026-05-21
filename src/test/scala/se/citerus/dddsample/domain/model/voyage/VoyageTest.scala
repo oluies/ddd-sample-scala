@@ -32,11 +32,6 @@ class VoyageTest extends AnyFunSuite with Matchers:
     (v1 == v3) shouldBe false
   }
 
-  test("NONE is the null-object voyage") {
-    Voyage.NONE.voyageNumber.idString shouldEqual ""
-    Voyage.NONE.schedule shouldBe Schedule.EMPTY
-  }
-
   test("rejects null schedule") {
     a[NullPointerException] should be thrownBy new Voyage(VoyageNumber("V001"), null)
   }

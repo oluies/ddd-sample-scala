@@ -31,12 +31,6 @@ final case class Cargo private (
     delivery: Delivery
 ) extends DomainEntity[Cargo]:
 
-  /**
-   * Itinerary view: returns [[Itinerary.EMPTY]] when no route is assigned,
-   * mirroring the upstream Java accessor.
-   */
-  def itinerary: Itinerary = itineraryOpt.getOrElse(Itinerary.EMPTY)
-
   /** Specifies a new route. Recomputes delivery synchronously. */
   def specifyNewRoute(spec: RouteSpecification): Cargo =
     Objects.requireNonNull(spec, "Route specification is required")

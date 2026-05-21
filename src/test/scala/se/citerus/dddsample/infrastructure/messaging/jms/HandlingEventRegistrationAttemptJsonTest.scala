@@ -8,11 +8,11 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
+import se.citerus.dddsample.application.handling.HandlingEventRegistrationAttempt
 import se.citerus.dddsample.domain.model.cargo.TrackingId
 import se.citerus.dddsample.domain.model.handling.HandlingEventType
 import se.citerus.dddsample.domain.model.location.UnLocode
 import se.citerus.dddsample.domain.model.voyage.VoyageNumber
-import se.citerus.dddsample.interfaces.handling.HandlingEventRegistrationAttempt
 
 /**
  * Locks the JMS payload format: the `HandlingEventRegistrationAttempt`

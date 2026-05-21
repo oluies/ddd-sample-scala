@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
 
 import se.citerus.dddsample.application.HandlingEventService
-import se.citerus.dddsample.interfaces.handling.HandlingEventRegistrationAttempt
+import se.citerus.dddsample.application.handling.HandlingEventRegistrationAttempt
 
 /**
  * Consumes registration-attempt messages off the queue and feeds them into

@@ -6,7 +6,7 @@ import se.citerus.dddsample.interfaces.booking.facade.dto.{CargoRoutingDTO, LegD
 final class CargoRoutingDTOAssembler:
 
   def toDTO(cargo: Cargo): CargoRoutingDTO =
-    val legs = cargo.itinerary.legs.map { leg =>
+    val legs = cargo.itineraryOpt.toList.flatMap(_.legs).map { leg =>
       LegDTO(
         leg.voyage.voyageNumber.idString,
         leg.loadLocation.unLocode.idString,

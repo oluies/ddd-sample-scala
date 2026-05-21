@@ -32,12 +32,9 @@ final class Voyage(val voyageNumber: VoyageNumber, val schedule: Schedule)
 
 object Voyage:
 
-  /** Null object pattern. */
-  val NONE: Voyage = new Voyage(VoyageNumber(""), Schedule.EMPTY)
-
   /**
-   * Builder for incremental construction of a [[Voyage]] aggregate. Serves as
-   * the aggregate factory.
+   * Builder for incremental construction of a [[Voyage]] aggregate. Serves
+   * as the aggregate factory.
    */
   final class Builder(voyageNumber: VoyageNumber, initialDepartureLocation: Location):
     Objects.requireNonNull(voyageNumber, "Voyage number is required")

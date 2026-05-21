@@ -46,12 +46,6 @@ final class Delivery private (
   /** Last known location, or [[Location.UNKNOWN]] if no events received. */
   def lastKnownLocation: Location = lastKnownLocationOpt.getOrElse(Location.UNKNOWN)
 
-  /**
-   * Estimated time of arrival as a nullable Java-style accessor: returns
-   * `null` if unknown. Scala callers should prefer the `eta` field directly.
-   */
-  def estimatedTimeOfArrival: Instant | Null = eta.orNull
-
   private def isOnTrack: Boolean = routingStatus == RoutingStatus.ROUTED && !misdirected
 
   /**

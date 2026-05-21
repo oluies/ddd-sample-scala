@@ -7,9 +7,9 @@ import org.slf4j.LoggerFactory
 import org.springframework.jms.core.{JmsOperations, MessageCreator}
 
 import se.citerus.dddsample.application.ApplicationEvents
+import se.citerus.dddsample.application.handling.HandlingEventRegistrationAttempt
 import se.citerus.dddsample.domain.model.cargo.Cargo
 import se.citerus.dddsample.domain.model.handling.HandlingEvent
-import se.citerus.dddsample.interfaces.handling.HandlingEventRegistrationAttempt
 
 /**
  * JMS-backed [[ApplicationEvents]]. Each event becomes a message on a

@@ -107,16 +107,3 @@ class ItineraryTest extends AnyFunSuite with Matchers:
     itinerary.finalArrivalLocation shouldEqual GOTHENBURG
     itinerary.finalArrivalDate shouldEqual Instant.ofEpochMilli(40)
   }
-
-  test("EMPTY accepts everything") {
-    val e = HandlingEvent(
-      cargo,
-      Instant.ofEpochMilli(50),
-      Instant.ofEpochMilli(50),
-      HandlingEventType.RECEIVE,
-      HANGZHOU
-    )
-    Itinerary.EMPTY.isExpected(e) shouldBe true
-    Itinerary.EMPTY.initialDepartureLocation shouldEqual Location.UNKNOWN
-    Itinerary.EMPTY.finalArrivalLocation shouldEqual Location.UNKNOWN
-  }

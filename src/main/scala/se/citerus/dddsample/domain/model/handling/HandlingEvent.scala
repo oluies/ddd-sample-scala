@@ -20,8 +20,7 @@ import se.citerus.dddsample.domain.shared.DomainEvent
  *
  * `voyage` is `Option[Voyage]` — `RECEIVE`, `CLAIM`, `CUSTOMS` events have
  * `None`; `LOAD` / `UNLOAD` require `Some(_)`. The smart constructors
- * enforce this. Callers handle `Option` directly rather than the upstream
- * `Voyage.NONE` sentinel.
+ * enforce this.
  */
 final class HandlingEvent private (
     val cargo: Cargo,

@@ -26,12 +26,3 @@ final case class CarrierMovement(
 
   override def sameValueAs(other: CarrierMovement): Boolean =
     other != null && this == other
-
-object CarrierMovement:
-  /** Null object pattern. */
-  val NONE: CarrierMovement = CarrierMovement(
-    Location.UNKNOWN,
-    Location.UNKNOWN,
-    Instant.ofEpochMilli(0),
-    Instant.ofEpochMilli(0)
-  )

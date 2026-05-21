@@ -6,6 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 import se.citerus.dddsample.application.ApplicationEvents
+import se.citerus.dddsample.application.handling.HandlingEventRegistrationAttempt
 import se.citerus.dddsample.application.impl.{
   BookingServiceImpl,
   CargoInspectionServiceImpl,
@@ -32,7 +33,6 @@ import se.citerus.dddsample.infrastructure.persistence.inmemory.{
   InMemoryVoyageRepository
 }
 import se.citerus.dddsample.infrastructure.sampledata.{SampleLocations, SampleVoyages}
-import se.citerus.dddsample.interfaces.handling.HandlingEventRegistrationAttempt
 
 /**
  * End-to-end scenario: a cargo is booked, routed, handled, inspected, and

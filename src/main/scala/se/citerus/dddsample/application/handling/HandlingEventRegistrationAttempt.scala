@@ -1,4 +1,4 @@
-package se.citerus.dddsample.interfaces.handling
+package se.citerus.dddsample.application.handling
 
 import java.io.Serializable
 import java.time.Instant
@@ -10,12 +10,15 @@ import se.citerus.dddsample.domain.model.location.UnLocode
 import se.citerus.dddsample.domain.model.voyage.VoyageNumber
 
 /**
- * Transfer object for incoming handling-event registration attempts. Used as
- * a JMS message payload — implements [[Serializable]].
+ * Transfer object for incoming handling-event registration attempts. Carries
+ * the data needed to construct a [[se.citerus.dddsample.domain.model.handling.HandlingEvent]]
+ * once the referenced cargo / voyage / location have been resolved.
  *
- * Lives in `interfaces.handling` upstream but is referenced by
- * `application.ApplicationEvents`, so it lands now (phase 8) and the rest
- * of the interfaces.handling package will follow in phase 14.
+ * Lives in the `application.handling` package because it is the contract
+ * between `ApplicationEvents` (application tier) and the report parser /
+ * JMS consumers — the *application* layer owns it, not the interfaces
+ * layer. The upstream Java project puts it in `interfaces.handling`,
+ * which is a layer violation we don't carry forward.
  */
 final case class HandlingEventRegistrationAttempt(
     registrationTime: Instant,
