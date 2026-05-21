@@ -33,10 +33,15 @@ jobs:
           distribution: temurin
           java-version: ${{ matrix.java }}
 
-      - name: Set up Coursier (installs Mill at the version in .mill-version)
+      - name: Set up Mill via Coursier
+        # Pin to the same version as .mill-version. The coursier-setup
+        # action's default `mill` resolves to 0.11.x, which silently fails
+        # to honour `.mill-version` and looks for the old `build.sc`
+        # filename instead of `build.mill`. Bump both sides together when
+        # upgrading Mill.
         uses: coursier/setup-action@v1
         with:
-          apps: mill
+          apps: mill:1.1.6
 
       - name: Cache Mill + Coursier
         uses: actions/cache@v4
