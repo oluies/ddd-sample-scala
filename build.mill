@@ -60,8 +60,8 @@ object ddd extends ScalaModule with ScalafmtModule {
     mvn"org.springframework.boot:spring-boot-starter-validation:$SpringBootVersion",
     mvn"org.springframework.boot:spring-boot-starter-thymeleaf:$SpringBootVersion",
     // ActiveMQ Classic 6.x (Jakarta) for in-process broker + Spring wiring.
-    mvn"org.apache.activemq:activemq-broker:6.1.5",
-    mvn"org.apache.activemq:activemq-spring:6.1.5",
+    mvn"org.apache.activemq:activemq-broker:6.1.8",
+    mvn"org.apache.activemq:activemq-spring:6.1.8",
     // Apache Commons utilities — null checks, string utils, builders.
     mvn"org.apache.commons:commons-lang3:3.20.0",
     mvn"commons-io:commons-io:2.18.0",
@@ -72,8 +72,10 @@ object ddd extends ScalaModule with ScalafmtModule {
     // can drop `scala` from the broker's setTrustedPackages list (any future
     // attacker reaching the queue can't pivot through Java deserialization
     // of `scala.Some` / `scala.None` etc.). Version-aligned with the
-    // Jackson 2.18.x that Spring Boot 3.3.10 brings in transitively.
-    mvn"com.fasterxml.jackson.module::jackson-module-scala:2.18.2",
+    // jackson-databind 2.19.x that ActiveMQ 6.1.8 brings in transitively
+    // — running module-scala against a newer databind aborts the JMS
+    // serializer at construction time with a JsonMappingException.
+    mvn"com.fasterxml.jackson.module::jackson-module-scala:2.19.1",
     // Magnum + H2 — PoC for the Magnum-based phase 9b persistence layer.
     // Lives alongside the in-memory repos; not yet wired into Spring beans
     // (the in-memory `@Repository`-annotated impls are still authoritative).
