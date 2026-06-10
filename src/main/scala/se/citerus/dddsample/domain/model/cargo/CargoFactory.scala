@@ -3,6 +3,7 @@ package se.citerus.dddsample.domain.model.cargo
 import java.time.Instant
 
 import se.citerus.dddsample.domain.model.location.{LocationRepository, UnLocode}
+import se.citerus.dddsample.domain.shared.DomainError
 
 /**
  * Application-tier factory that creates a fresh [[Cargo]] aggregate, looking
@@ -10,8 +11,9 @@ import se.citerus.dddsample.domain.model.location.{LocationRepository, UnLocode}
  * via [[LocationRepository]] and minting a new [[TrackingId]] via
  * [[CargoRepository.nextTrackingId]].
  *
- * Throws `NoSuchElementException` if either UN/Locode is unknown (upstream
- * Java silently passes `null` through; we surface the error instead).
+ * Returns `Either[DomainError, Cargo]` — unknown UN/Locode → `UnknownLocation`,
+ * and an `IllegalArgumentException` from `RouteSpecification`'s invariants
+ * (e.g. origin == destination) is captured as `InvariantViolation`.
  */
 final class CargoFactory(
     locationRepository: LocationRepository,
@@ -22,19 +24,21 @@ final class CargoFactory(
       originUnLoCode: UnLocode,
       destinationUnLoCode: UnLocode,
       arrivalDeadline: Instant
-  ): Cargo =
-    val trackingId = cargoRepository.nextTrackingId()
-    val origin = locationRepository
-      .find(originUnLoCode)
-      .getOrElse(
-        throw new NoSuchElementException(s"Unknown origin UN locode: ${originUnLoCode.idString}")
-      )
-    val destination = locationRepository
-      .find(destinationUnLoCode)
-      .getOrElse(
-        throw new NoSuchElementException(
-          s"Unknown destination UN locode: ${destinationUnLoCode.idString}"
-        )
-      )
-    val spec = RouteSpecification(origin, destination, arrivalDeadline)
-    Cargo(trackingId, spec)
+  ): Either[DomainError, Cargo] =
+    for
+      origin <- locationRepository
+        .find(originUnLoCode)
+        .toRight(DomainError.UnknownLocation(originUnLoCode))
+      destination <- locationRepository
+        .find(destinationUnLoCode)
+        .toRight(DomainError.UnknownLocation(destinationUnLoCode))
+      spec <- buildSpec(origin, destination, arrivalDeadline)
+    yield Cargo(cargoRepository.nextTrackingId(), spec)
+
+  private def buildSpec(
+      origin: se.citerus.dddsample.domain.model.location.Location,
+      destination: se.citerus.dddsample.domain.model.location.Location,
+      arrivalDeadline: Instant
+  ): Either[DomainError, RouteSpecification] =
+    try Right(RouteSpecification(origin, destination, arrivalDeadline))
+    catch case e: IllegalArgumentException => Left(DomainError.fromThrowable(e))

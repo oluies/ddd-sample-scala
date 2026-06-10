@@ -5,17 +5,16 @@ import java.time.Instant
 import se.citerus.dddsample.domain.model.cargo.{CargoRepository, TrackingId}
 import se.citerus.dddsample.domain.model.location.{LocationRepository, UnLocode}
 import se.citerus.dddsample.domain.model.voyage.{VoyageNumber, VoyageRepository}
+import se.citerus.dddsample.domain.shared.DomainError
 
 /**
  * Application-tier factory that creates [[HandlingEvent]]s, looking up the
  * referenced cargo / voyage / location via their repositories.
  *
- * Returns `Either[CannotCreateHandlingEventException, HandlingEvent]` — the
- * lookup failures (`UnknownCargoException`, `UnknownVoyageException`,
- * `UnknownLocationException`) and the `HandlingEvent.apply` validation
- * failure all surface as `Left` values. Callers at the boundary
- * (`HandlingEventServiceImpl`) decide whether to translate them back into
- * thrown exceptions for transactional rollback.
+ * Returns `Either[DomainError, HandlingEvent]` — repository lookups surface
+ * as `UnknownCargo` / `UnknownLocation` / `UnknownVoyage`, and the
+ * `HandlingEvent.apply` validation failures (e.g. missing voyage for LOAD)
+ * surface as `InvariantViolation`.
  */
 final class HandlingEventFactory(
     cargoRepository: CargoRepository,
@@ -30,15 +29,15 @@ final class HandlingEventFactory(
       voyageNumber: Option[VoyageNumber],
       unlocode: UnLocode,
       eventType: HandlingEventType
-  ): Either[CannotCreateHandlingEventException, HandlingEvent] =
+  ): Either[DomainError, HandlingEvent] =
     for
-      cargo    <- cargoRepository.find(trackingId).toRight(UnknownCargoException(trackingId))
-      location <- locationRepository.find(unlocode).toRight(UnknownLocationException(unlocode))
+      cargo    <- cargoRepository.find(trackingId).toRight(DomainError.UnknownCargo(trackingId))
+      location <- locationRepository.find(unlocode).toRight(DomainError.UnknownLocation(unlocode))
       voyage <- voyageNumber.fold(
-        Right(None): Either[CannotCreateHandlingEventException, Option[
+        Right(None): Either[DomainError, Option[
           se.citerus.dddsample.domain.model.voyage.Voyage
         ]]
-      )(vn => voyageRepository.find(vn).map(Some(_)).toRight(UnknownVoyageException(vn)))
+      )(vn => voyageRepository.find(vn).map(Some(_)).toRight(DomainError.UnknownVoyage(vn)))
       event <- buildEvent(cargo, completionTime, registrationTime, eventType, location, voyage)
     yield event
 
@@ -49,7 +48,7 @@ final class HandlingEventFactory(
       eventType: HandlingEventType,
       location: se.citerus.dddsample.domain.model.location.Location,
       voyage: Option[se.citerus.dddsample.domain.model.voyage.Voyage]
-  ): Either[CannotCreateHandlingEventException, HandlingEvent] =
+  ): Either[DomainError, HandlingEvent] =
     try
       Right(voyage match
         case Some(v) =>
@@ -57,4 +56,4 @@ final class HandlingEventFactory(
         case None =>
           HandlingEvent(cargo, completionTime, registrationTime, eventType, location)
       )
-    catch case e: Exception => Left(new CannotCreateHandlingEventException(e))
+    catch case e: IllegalArgumentException => Left(DomainError.fromThrowable(e))
