@@ -9,13 +9,13 @@ import org.springframework.transaction.annotation.Transactional
 import se.citerus.dddsample.application.{ApplicationEvents, HandlingEventService}
 import se.citerus.dddsample.domain.model.cargo.TrackingId
 import se.citerus.dddsample.domain.model.handling.{
-  CannotCreateHandlingEventException,
   HandlingEventFactory,
   HandlingEventRepository,
   HandlingEventType
 }
 import se.citerus.dddsample.domain.model.location.UnLocode
 import se.citerus.dddsample.domain.model.voyage.VoyageNumber
+import se.citerus.dddsample.domain.shared.DomainError
 
 @Service
 final class HandlingEventServiceImpl(
@@ -26,25 +26,31 @@ final class HandlingEventServiceImpl(
 
   private val logger = LoggerFactory.getLogger(getClass)
 
-  @Transactional(rollbackFor = Array(classOf[CannotCreateHandlingEventException]))
+  /**
+   * No `rollbackFor` override needed any more: the method no longer throws.
+   * The factory's `Left` short-circuits before any side-effect, so there's
+   * nothing to roll back.
+   */
+  @Transactional
   override def registerHandlingEvent(
       completionTime: Instant,
       trackingId: TrackingId,
       voyageNumber: Option[VoyageNumber],
       unLocode: UnLocode,
       eventType: HandlingEventType
-  ): Unit =
+  ): Either[DomainError, Unit] =
     val registrationTime = Instant.now()
-    handlingEventFactory.createHandlingEvent(
-      registrationTime,
-      completionTime,
-      trackingId,
-      voyageNumber,
-      unLocode,
-      eventType
-    ) match
-      case Left(err) => throw err
-      case Right(event) =>
+    handlingEventFactory
+      .createHandlingEvent(
+        registrationTime,
+        completionTime,
+        trackingId,
+        voyageNumber,
+        unLocode,
+        eventType
+      )
+      .map { event =>
         handlingEventRepository.store(event)
         applicationEvents.cargoWasHandled(event)
         logger.info("Registered handling event: {}", event)
+      }

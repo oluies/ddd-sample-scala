@@ -28,6 +28,7 @@ import se.citerus.dddsample.domain.model.voyage.{
   VoyageNumber,
   VoyageRepository
 }
+import se.citerus.dddsample.domain.shared.DomainError
 
 class HandlingEventServiceImplTest extends AnyFunSuite with Matchers:
 
@@ -47,7 +48,7 @@ class HandlingEventServiceImplTest extends AnyFunSuite with Matchers:
     RouteSpecification(HAMBURG, TOKYO, Instant.parse("2026-12-01T00:00:00Z"))
   )
 
-  test("registerHandlingEvent stores the event and publishes cargoWasHandled") {
+  test("registerHandlingEvent stores event, publishes cargoWasHandled, and returns Right(())") {
     val cargoRepository         = mock(classOf[CargoRepository])
     val voyageRepository        = mock(classOf[VoyageRepository])
     val handlingEventRepository = mock(classOf[HandlingEventRepository])
@@ -60,7 +61,7 @@ class HandlingEventServiceImplTest extends AnyFunSuite with Matchers:
     when(voyageRepository.find(voyage.voyageNumber)).thenReturn(Some(voyage))
     when(locationRepository.find(STOCKHOLM.unLocode)).thenReturn(Some(STOCKHOLM))
 
-    service.registerHandlingEvent(
+    val result = service.registerHandlingEvent(
       Instant.now(),
       cargo.trackingId,
       Some(voyage.voyageNumber),
@@ -68,6 +69,30 @@ class HandlingEventServiceImplTest extends AnyFunSuite with Matchers:
       HandlingEventType.LOAD
     )
 
+    result shouldEqual Right(())
     verify(handlingEventRepository, times(1)).store(isA(classOf[HandlingEvent]))
     verify(applicationEvents, times(1)).cargoWasHandled(isA(classOf[HandlingEvent]))
+  }
+
+  test("registerHandlingEvent with unknown cargo returns Left(UnknownCargo) and stores nothing") {
+    val cargoRepository         = mock(classOf[CargoRepository])
+    val voyageRepository        = mock(classOf[VoyageRepository])
+    val handlingEventRepository = mock(classOf[HandlingEventRepository])
+    val locationRepository      = mock(classOf[LocationRepository])
+    val applicationEvents       = mock(classOf[ApplicationEvents])
+    val factory = new HandlingEventFactory(cargoRepository, voyageRepository, locationRepository)
+    val service = new HandlingEventServiceImpl(handlingEventRepository, applicationEvents, factory)
+
+    val unknownId = TrackingId("XYZ")
+    when(cargoRepository.find(unknownId)).thenReturn(None)
+
+    val result = service.registerHandlingEvent(
+      Instant.now(),
+      unknownId,
+      None,
+      STOCKHOLM.unLocode,
+      HandlingEventType.RECEIVE
+    )
+    result shouldEqual Left(DomainError.UnknownCargo(unknownId))
+    verify(handlingEventRepository, times(0)).store(isA(classOf[HandlingEvent]))
   }

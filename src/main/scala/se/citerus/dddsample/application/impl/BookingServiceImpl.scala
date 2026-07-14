@@ -16,6 +16,7 @@ import se.citerus.dddsample.domain.model.cargo.{
 }
 import se.citerus.dddsample.domain.model.location.{LocationRepository, UnLocode}
 import se.citerus.dddsample.domain.service.RoutingService
+import se.citerus.dddsample.domain.shared.DomainError
 
 @Service
 final class BookingServiceImpl(
@@ -32,37 +33,62 @@ final class BookingServiceImpl(
       origin: UnLocode,
       destination: UnLocode,
       arrivalDeadline: Instant
-  ): TrackingId =
-    val cargo = cargoFactory.createCargo(origin, destination, arrivalDeadline)
-    cargoRepository.store(cargo)
-    logger.info("Booked new cargo with tracking id {}", cargo.trackingId.idString)
-    cargo.trackingId
+  ): Either[DomainError, TrackingId] =
+    cargoFactory.createCargo(origin, destination, arrivalDeadline).map { cargo =>
+      cargoRepository.store(cargo)
+      logger.info("Booked new cargo with tracking id {}", cargo.trackingId.idString)
+      cargo.trackingId
+    }
 
   @Transactional
-  override def requestPossibleRoutesForCargo(trackingId: TrackingId): List[Itinerary] =
-    cargoRepository.find(trackingId) match
-      case Some(cargo) => routingService.fetchRoutesForSpecification(cargo.routeSpecification)
-      case None        => Nil
+  override def requestPossibleRoutesForCargo(
+      trackingId: TrackingId
+  ): Either[DomainError, List[Itinerary]] =
+    cargoRepository
+      .find(trackingId)
+      .toRight(DomainError.UnknownCargo(trackingId))
+      .map(cargo => routingService.fetchRoutesForSpecification(cargo.routeSpecification))
 
   @Transactional
-  override def assignCargoToRoute(itinerary: Itinerary, trackingId: TrackingId): Unit =
-    val cargo = cargoRepository.find(trackingId).getOrElse {
-      throw new IllegalArgumentException(
-        s"Can't assign itinerary to non-existing cargo $trackingId"
+  override def assignCargoToRoute(
+      itinerary: Itinerary,
+      trackingId: TrackingId
+  ): Either[DomainError, Unit] =
+    cargoRepository
+      .find(trackingId)
+      .toRight(DomainError.UnknownCargo(trackingId))
+      .map { cargo =>
+        cargoRepository.store(cargo.assignToRoute(itinerary))
+        logger.info("Assigned cargo {} to new route", trackingId.idString)
+      }
+
+  @Transactional
+  override def changeDestination(
+      trackingId: TrackingId,
+      unLocode: UnLocode
+  ): Either[DomainError, Unit] =
+    for
+      cargo <- cargoRepository.find(trackingId).toRight(DomainError.UnknownCargo(trackingId))
+      newDestination <- locationRepository
+        .find(unLocode)
+        .toRight(DomainError.UnknownLocation(unLocode))
+      newSpec <- buildNewSpec(
+        cargo.origin,
+        newDestination,
+        cargo.routeSpecification.arrivalDeadline
       )
-    }
-    cargoRepository.store(cargo.assignToRoute(itinerary))
-    logger.info("Assigned cargo {} to new route", trackingId.idString)
+    yield
+      cargoRepository.store(cargo.specifyNewRoute(newSpec))
+      logger.info(
+        "Changed destination for cargo {} to {}",
+        trackingId.idString,
+        newSpec.destination
+      )
 
-  @Transactional
-  override def changeDestination(trackingId: TrackingId, unLocode: UnLocode): Unit =
-    val cargo = cargoRepository.find(trackingId).getOrElse {
-      throw new IllegalArgumentException(s"Unknown cargo $trackingId")
-    }
-    val newDestination = locationRepository.find(unLocode).getOrElse {
-      throw new IllegalArgumentException(s"Unknown destination ${unLocode.idString}")
-    }
-    val newSpec =
-      RouteSpecification(cargo.origin, newDestination, cargo.routeSpecification.arrivalDeadline)
-    cargoRepository.store(cargo.specifyNewRoute(newSpec))
-    logger.info("Changed destination for cargo {} to {}", trackingId.idString, newSpec.destination)
+  private def buildNewSpec(
+      origin: se.citerus.dddsample.domain.model.location.Location,
+      destination: se.citerus.dddsample.domain.model.location.Location,
+      deadline: Instant
+  ): Either[DomainError, RouteSpecification] =
+    try Right(RouteSpecification(origin, destination, deadline))
+    catch case e: IllegalArgumentException => Left(DomainError.fromThrowable(e))

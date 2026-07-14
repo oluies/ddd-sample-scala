@@ -110,44 +110,50 @@ class CargoLifecycleScenarioTest extends AnyFunSuite with Matchers:
     import SampleVoyages.*
 
     // 1. Booking
-    val trackingId = bookingService.bookNewCargo(
-      HONGKONG.unLocode,
-      STOCKHOLM.unLocode,
-      toDate("2009-03-18")
+    val trackingId = orFail(
+      bookingService.bookNewCargo(
+        HONGKONG.unLocode,
+        STOCKHOLM.unLocode,
+        toDate("2009-03-18")
+      )
     )
     cargoRepository.find(trackingId) shouldBe defined
 
     // 2. Routing — pick the only itinerary and assign it.
-    val candidates = bookingService.requestPossibleRoutesForCargo(trackingId)
+    val candidates = orFail(bookingService.requestPossibleRoutesForCargo(trackingId))
     candidates should not be empty
     val itinerary = candidates.head
-    bookingService.assignCargoToRoute(itinerary, trackingId)
+    orFail(bookingService.assignCargoToRoute(itinerary, trackingId))
 
     val cargo = cargoRepository.find(trackingId).get
     cargo.delivery.routingStatus shouldEqual RoutingStatus.ROUTED
 
     // 3. Receive at Hong Kong.
-    handlingEventService.registerHandlingEvent(
-      toDate("2009-03-01"),
-      trackingId,
-      None,
-      HONGKONG.unLocode,
-      HandlingEventType.RECEIVE
+    orFail(
+      handlingEventService.registerHandlingEvent(
+        toDate("2009-03-01"),
+        trackingId,
+        None,
+        HONGKONG.unLocode,
+        HandlingEventType.RECEIVE
+      )
     )
-    cargoInspectionService.inspectCargo(trackingId)
+    orFail(cargoInspectionService.inspectCargo(trackingId))
     val cargoAfterReceive = cargoRepository.find(trackingId).get
     cargoAfterReceive.delivery.transportStatus shouldEqual TransportStatus.IN_PORT
     cargoAfterReceive.delivery.lastKnownLocation shouldEqual HONGKONG
 
     // 4. Load onto Hong Kong → New York.
-    handlingEventService.registerHandlingEvent(
-      toDate("2009-03-02"),
-      trackingId,
-      Some(HONGKONG_TO_NEW_YORK.voyageNumber),
-      HONGKONG.unLocode,
-      HandlingEventType.LOAD
+    orFail(
+      handlingEventService.registerHandlingEvent(
+        toDate("2009-03-02"),
+        trackingId,
+        Some(HONGKONG_TO_NEW_YORK.voyageNumber),
+        HONGKONG.unLocode,
+        HandlingEventType.LOAD
+      )
     )
-    cargoInspectionService.inspectCargo(trackingId)
+    orFail(cargoInspectionService.inspectCargo(trackingId))
     cargoRepository
       .find(trackingId)
       .get
@@ -155,14 +161,16 @@ class CargoLifecycleScenarioTest extends AnyFunSuite with Matchers:
       .transportStatus shouldEqual TransportStatus.ONBOARD_CARRIER
 
     // 5. Unload at New York.
-    handlingEventService.registerHandlingEvent(
-      toDate("2009-03-05"),
-      trackingId,
-      Some(HONGKONG_TO_NEW_YORK.voyageNumber),
-      NEWYORK.unLocode,
-      HandlingEventType.UNLOAD
+    orFail(
+      handlingEventService.registerHandlingEvent(
+        toDate("2009-03-05"),
+        trackingId,
+        Some(HONGKONG_TO_NEW_YORK.voyageNumber),
+        NEWYORK.unLocode,
+        HandlingEventType.UNLOAD
+      )
     )
-    cargoInspectionService.inspectCargo(trackingId)
+    orFail(cargoInspectionService.inspectCargo(trackingId))
     cargoRepository
       .find(trackingId)
       .get
@@ -175,14 +183,21 @@ class CargoLifecycleScenarioTest extends AnyFunSuite with Matchers:
     arrivedCount.get shouldEqual 0
 
     // 6. Misdirection: unload at the wrong port.
-    handlingEventService.registerHandlingEvent(
-      toDate("2009-03-06"),
-      trackingId,
-      Some(NEW_YORK_TO_DALLAS.voyageNumber),
-      HELSINKI.unLocode,
-      HandlingEventType.UNLOAD
+    orFail(
+      handlingEventService.registerHandlingEvent(
+        toDate("2009-03-06"),
+        trackingId,
+        Some(NEW_YORK_TO_DALLAS.voyageNumber),
+        HELSINKI.unLocode,
+        HandlingEventType.UNLOAD
+      )
     )
-    cargoInspectionService.inspectCargo(trackingId)
+    orFail(cargoInspectionService.inspectCargo(trackingId))
     cargoRepository.find(trackingId).get.delivery.isMisdirected shouldBe true
     misdirectedCount.get shouldEqual 1
   }
+
+  private def orFail[A](
+      result: Either[se.citerus.dddsample.domain.shared.DomainError, A]
+  ): A =
+    result.fold(err => fail(s"unexpected DomainError: ${err.message}"), identity)
