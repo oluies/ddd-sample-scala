@@ -99,7 +99,7 @@ object ddd extends ScalaModule with ScalafmtModule {
         .exclude("org.junit.vintage" -> "junit-vintage-engine"),
       mvn"org.scalatest::scalatest:3.2.20",
       mvn"org.scalacheck::scalacheck:1.19.0",
-      mvn"org.scalatestplus::scalacheck-1-18:3.2.19.0",
+      mvn"org.scalatestplus::scalacheck-1-19:3.2.20.0",
       mvn"org.scalatestplus::mockito-5-12:3.2.19.0"
     )
   }
