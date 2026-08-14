@@ -75,10 +75,11 @@ object ddd extends ScalaModule with ScalafmtModule {
     // can drop `scala` from the broker's setTrustedPackages list (any future
     // attacker reaching the queue can't pivot through Java deserialization
     // of `scala.Some` / `scala.None` etc.). Version-aligned with the
-    // jackson-databind 2.21.x that ActiveMQ 6.2.6 brings in transitively
+    // jackson-databind 2.22.x that ActiveMQ 6.2.9 brings in transitively
     // — running module-scala against a newer databind aborts the JMS
-    // serializer at construction time with a JsonMappingException.
-    mvn"com.fasterxml.jackson.module::jackson-module-scala:2.21.1",
+    // serializer at construction time with a JsonMappingException, so this
+    // has to move in lockstep with every ActiveMQ bump.
+    mvn"com.fasterxml.jackson.module::jackson-module-scala:2.22.1",
     // Magnum + H2 — PoC for the Magnum-based phase 9b persistence layer.
     // Lives alongside the in-memory repos; not yet wired into Spring beans
     // (the in-memory `@Repository`-annotated impls are still authoritative).
