@@ -63,7 +63,7 @@ object ddd extends ScalaModule with ScalafmtModule {
     mvn"org.apache.activemq:activemq-broker:6.3.1",
     mvn"org.apache.activemq:activemq-spring:6.3.1",
     // Apache Commons utilities — null checks, string utils, builders.
-    mvn"org.apache.commons:commons-lang3:3.20.0",
+    mvn"org.apache.commons:commons-lang3:3.21.0",
     mvn"commons-io:commons-io:2.18.0",
     // HSQLDB for the dev profile + integration tests (matches upstream Java).
     mvn"org.hsqldb:hsqldb:2.7.4",
