@@ -1,6 +1,27 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended"
+  "extends": ["config:recommended"],
+  "description": [
+    "Replaces .github/dependabot.yml, so one bot owns dependency updates here.",
+    "",
+    "Scoped to github-actions. The JVM build is build.mill, and the old Dependabot",
+    "config's note explains why it was never covered: Dependabot has no `mill`",
+    "package-ecosystem. Scala Steward handles it instead -- see .scala-steward.conf",
+    "-- and is left in place, so Renovate and Steward do not overlap.",
+    "",
+    "Enroll the repo with Steward by adding it to your scala-steward-repos.md;",
+    "that instruction came from the Dependabot config and is kept here."
+  ],
+  "enabledManagers": ["github-actions"],
+  "schedule": ["before 6am on monday"],
+  "timezone": "Europe/Stockholm",
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "description": "Was the github-actions ecosystem in .github/dependabot.yml: weekly, labels dependencies + github-actions. Grouped into one PR, which Dependabot was not doing.",
+      "matchManagers": ["github-actions"],
+      "groupName": "github actions",
+      "addLabels": ["github-actions"]
+    }
   ]
 }
